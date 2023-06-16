@@ -1,0 +1,234 @@
+// const socket = io();
+// 
+// const joinForm = document.getElementById('joinForm');
+// const playerNameInput = document.getElementById('playerNameInput');
+// const createRoomBtn = document.getElementById('createRoomBtn');
+// const joinRoomContainer = document.getElementById('joinRoomContainer');
+// const roomCodeInput = document.getElementById('roomCodeInput');
+// const joinRoomBtn = document.getElementById('joinRoomBtn');
+// const waitingRoom = document.getElementById('waitingRoom');
+// const roomCode = document.getElementById('roomCode');
+// const playerList = document.getElementById('playerList');
+// 
+// createRoomBtn.addEventListener('click', () => {
+//     const playerName = playerNameInput.value.trim();
+//     if (playerName !== '') {
+//         socket.emit('createRoom', playerName);
+//     }
+// });
+// 
+// joinRoomBtn.addEventListener('click', () => {
+//     const roomCode = roomCodeInput.value.trim();
+//     const playerName = playerNameInput.value.trim();
+//     if (roomCode !== '' && playerName !== '') {
+//         socket.emit('joinRoom', roomCode, playerName);
+//     }
+// });
+// 
+// socket.on('roomCreated', (roomCode) => {
+//     //   joinForm.style.display = 'none';
+//     //   joinRoomContainer.style.display = 'block';
+//     roomCodeInput.value = roomCode;
+// });
+// 
+// socket.on('roomJoined', (roomId) => {
+//     //   joinForm.style.display = 'none';
+//     //   joinRoomContainer.style.display = 'none';
+//     waitingRoom.style.display = 'block';
+//     roomCode.textContent = roomId;
+// });
+// 
+// socket.on('roomNotFound', () => {
+//     alert('La sala no existe. Por favor, verifique el código de la sala.');
+// });
+// 
+// socket.on('playerList', (players) => {
+//     playerList.innerHTML = '';
+//     players.forEach((player) => {
+//         const listItem = document.createElement('li');
+//         listItem.textContent = player.name;
+//         playerList.appendChild(listItem);
+//     });
+// });
+
+const config = {
+    type: Phaser.CANVAS,
+    width: 800,
+    height: 600,
+    physics: {
+        default: 'arcade',
+        arcade: {
+            gravity: { y: 500 },
+        },
+    },
+    scale: {
+        parent: 'pito',
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+        width: 400,
+        height: 300,
+        zoom: 2, // Ajusta este valor para que se ajuste a tus necesidades
+    },
+    scene: {
+        preload: preload,
+        create: create,
+        update: update,
+    },
+};
+
+let player;
+let player2;
+let cursors;
+
+let game = new Phaser.Game(config);
+
+function preload() {
+//     // Carga la hoja de sprites del jugador
+//     this.load.spritesheet('player', 'assets/player.png', {
+//         frameWidth: 16,
+//         frameHeight: 24,
+//     });
+// 
+//     this.load.spritesheet('player2', 'assets/player2.png', {
+//         frameWidth: 16,
+//         frameHeight: 24,
+//     });
+
+    // Carga el archivo del tileset
+    this.load.image('tileMap', 'assets/tileMap.png');
+    this.load.tilemapTiledJSON('level1', 'assets/level1.json');
+
+}
+
+function create() {
+    //     // Crea una animación para el jugador
+    //     // frames: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+    //
+    //     // Establece el color de fondo a blanco
+    //     this.cameras.main.setBackgroundColor('#ffffff');
+    //
+    //     this.anims.create({
+    //         key: 'idle',
+    //         frames: this.anims.generateFrameNumbers('player', {
+    //             frames: [4, 5, 6, 7],
+    //         }),
+    //         frameRate: 10,
+    //         repeat: -1,
+    //     });
+    //
+    //     this.anims.create({
+    //         key: 'jump',
+    //         frames: this.anims.generateFrameNumbers('player', {
+    //             frames: [8, 9, 10, 11],
+    //         }),
+    //         frameRate: 30,
+    //         repeat: -1,
+    //     });
+    //
+    //     this.anims.create({
+    //         key: 'idle2',
+    //         frames: this.anims.generateFrameNumbers('player2', {
+    //             frames: [4, 5, 6, 7],
+    //         }),
+    //         frameRate: 10,
+    //         repeat: -1,
+    //     });
+    //
+    //     this.anims.create({
+    //         key: 'jump2',
+    //         frames: this.anims.generateFrameNumbers('player2', {
+    //             frames: [8, 9, 10, 11],
+    //         }),
+    //         frameRate: 30,
+    //         repeat: -1,
+    //     });
+    //
+    //
+    //     // Crea al jugador
+    //     player = this.physics.add.sprite(50, 50, 'player');
+    //     player.setSize(16, 24);
+    //     player.setScale(2);
+    //     player.setCollideWorldBounds(true);
+    //
+    //     // Crea al jugador
+    //     player2 = this.physics.add.sprite(50, 50, 'player2');
+    //     player2.setSize(16, 24);
+    //     player2.setScale(2);
+    //     player2.setCollideWorldBounds(true);
+    //
+    //     // player.anims.play('idle', true);
+    //
+    //     // Habilita los controles del teclado
+    //     cursors = this.input.keyboard.createCursorKeys();
+
+    /************************* */
+    // Create the tilemap
+    const map = this.make.tilemap({ key: 'level1' });
+
+    // Load the tileset image
+    const tileset = map.addTilesetImage('tilesetName', 'tileMap');
+
+    // Create the layers based on layer names from Tiled
+    const layer1 = map.createLayer('Capa de patrones 1', tileset);
+    const layer2 = map.createLayer('Capa de patrones 2', tileset);
+    /************************* */
+}
+
+function update() {
+    //     // Controla el movimiento del jugador
+    //     if (cursors.left.isDown) {
+    //         player.setVelocityX(-160);
+    //         player.setFlipX(true); // Mira hacia la izquierda
+    //         if (player.body.onFloor()) {
+    //             // solo reproduce la animación 'idle' si el jugador está en el suelo
+    //             player.anims.play('idle', true);
+    //         }
+    //     } else if (cursors.right.isDown) {
+    //         player.setVelocityX(160);
+    //         player.setFlipX(false); // Mira hacia la derecha
+    //         if (player.body.onFloor()) {
+    //             // solo reproduce la animación 'idle' si el jugador está en el suelo
+    //             player.anims.play('idle', true);
+    //         }
+    //     } else {
+    //         player.setVelocityX(0);
+    //         if (player.body.onFloor()) {
+    //             // solo reproduce la animación 'idle' si el jugador está en el suelo
+    //             player.anims.play('idle', true);
+    //         }
+    //     }
+    //
+    //     if (cursors.up.isDown && player.body.onFloor()) {
+    //         player.setVelocityY(-250); // Ajusta este valor según lo alto que quieras que el jugador salte
+    //         player.anims.play('jump', true); // reproduce la animación 'jump' cuando el jugador está saltando
+    //     }
+    //
+    //     // player 2
+    //     // Controla el movimiento del jugador
+    //     if (cursors.left.isDown) {
+    //         player2.setVelocityX(160);
+    //         player2.setFlipX(false); // Mira hacia la izquierda
+    //         if (player2.body.onFloor()) {
+    //             // solo reproduce la animación 'idle' si el jugador está en el suelo
+    //             player2.anims.play('idle2', true);
+    //         }
+    //     } else if (cursors.right.isDown) {
+    //         player2.setVelocityX(-160);
+    //         player2.setFlipX(true); // Mira hacia la derecha
+    //         if (player2.body.onFloor()) {
+    //             // solo reproduce la animación 'idle2' si el jugador está en el suelo
+    //             player2.anims.play('idle2', true);
+    //         }
+    //     } else {
+    //         player2.setVelocityX(0);
+    //         if (player2.body.onFloor()) {
+    //             // solo reproduce la animación 'idle2' si el jugador está en el suelo
+    //             player2.anims.play('idle2', true);
+    //         }
+    //     }
+    //
+    //     if (cursors.up.isDown && player2.body.onFloor()) {
+    //         player2.setVelocityY(-250); // Ajusta este valor según lo alto que quieras que el jugador salte
+    //         player2.anims.play('jump2', true); // reproduce la animación 'jump' cuando el jugador está saltando
+    //     }
+}

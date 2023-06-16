@@ -1,0 +1,75 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "",
+    "expandedProjectPaths": [
+        "."
+    ],
+    "file.lastUsedOpenFilter": "Todos los archivos (*)",
+    "fileStates": {
+        "": {
+            "scaleInDock": 2
+        },
+        "#tileMap": {
+            "scaleInDock": 1
+        },
+        "level1..tmj": {
+            "scale": 1.9,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 224.4736842105263,
+                "y": 224.73684210526315
+            }
+        },
+        "level1.tmx": {
+            "scale": 1.5,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 365.33333333333337,
+                "y": 277.66666666666663
+            }
+        },
+        "level1.tmx#tileMap": {
+            "scaleInDock": 2
+        },
+        "level2.tmx": {
+            "scale": 1.5,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 360.66666666666663,
+                "y": 206.99999999999997
+            }
+        },
+        "level2.tmx#tileMap": {
+            "scaleInDock": 2
+        },
+        "tilemap_packed.tsx": {
+            "scaleInDock": 1.5,
+            "scaleInEditor": 1
+        }
+    },
+    "last.exportedFilePath": "C:/wamp64/www/game/pito/public/assets",
+    "last.imagePath": "C:/wamp64/www/game/pito/public/assets",
+    "map.height": 25,
+    "map.lastUsedExportFilter": "JSON map files (*.tmj *.json)",
+    "map.lastUsedFormat": "tmx",
+    "map.tileHeight": 18,
+    "map.tileWidth": 18,
+    "map.width": 40,
+    "openFiles": [
+    ],
+    "project": "pito.tiled-project",
+    "recentFiles": [
+        "level1..tmj",
+        "level1.tmx",
+        "tilemap_packed.tsx"
+    ],
+    "tileset.embedInMap": true,
+    "tileset.lastUsedFormat": "tsx",
+    "tileset.tileSize": {
+        "height": 18,
+        "width": 18
+    }
+}
