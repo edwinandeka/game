@@ -24,13 +24,30 @@ const config = {
 let player;
 let player2;
 let weapon;
+let weapons = [];
 var maxBullets = 2; // Número máximo de balas que pueden estar en juego a la vez
 var bullets;
 let layer1;
 let layer2;
+let guns;
 
 let cursors;
 let playerNameText;
+
+class Coin extends Phaser.GameObjects.Sprite {
+    constructor(scene, x, y, texture, frame) {
+        super(scene, x, y, texture, frame);
+
+        // Add any custom properties or methods here
+        this.value = 10;
+    }
+
+    // You can also add methods to your custom class
+    collect() {
+        console.log('Coin collected!');
+    }
+}
+
 setTimeout(() => {
     let game = new Phaser.Game(config);
 }, 100);
@@ -59,7 +76,7 @@ function preload() {
         'assets/fonts/atari-smooth-black.png',
         'assets/fonts/atari-smooth.xml'
     );
-    this.load.image('weapon', 'assets/tiles/raygunPurple.png');
+    this.load.image('weapon', 'assets/tiles/gun.png');
     this.load.image('bullet', 'assets/tiles/laserPurple.png');
     this.load.image('bullet-pop', 'assets/tiles/laserBlueBurst.png');
     this.load.image('container', 'assets/tiles/map/tile_0009.png');
@@ -137,13 +154,6 @@ function create() {
     layer3 = map.createLayer('fondo', tileset);
     layer2 = map.createDynamicLayer('platforms', tileset);
 
-
-    guns = map.createFromObjects('contenedores', {
-        name: 'gun',
-        key: 'container'
-    });
-
-
     // Configura todos los tiles para ser colisionables basándote en sus propiedades personalizadas en Tiled.
     layer2.setCollisionByProperty({ collides: true });
     // Configura todos los tiles para ser colisionables.
@@ -161,14 +171,29 @@ function create() {
     player.body.maxVelocity.x = 100; // Máxima velocidad horizontal
     player.body.drag.x = 1000; // Aceleración o "resistencia" horizontal
 
-    // Habilita la colisión entre el personaje y la capa de tiles.
-    this.physics.add.collider(player, guns, handlePlayerGunCollision, null, this);
-   
+    gunContainer = map.createFromObjects('contenedores', {
+        name: 'gun',
+        key: 'container',
+        classType: Coin,
+    });
+
+    gunContainer.forEach((gunContainer) => {
+        this.physics.add.existing(gunContainer);
+        // Habilita la colisión entre el personaje y la capa de tiles.
+        this.physics.add.collider(
+            player,
+            gunContainer,
+            handlePlayerGunCollision,
+            null,
+            this
+        );
+    });
 
     // Ajusta la cámara al tamaño del mapa
     this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
     // Hace que la cámara siga al personaje
     this.cameras.main.startFollow(player);
+    this.physics.add.collider(layer2, player);
 
     /************************* */
 
@@ -180,11 +205,6 @@ function create() {
         Phaser.Input.Keyboard.KeyCodes.SPACE
     );
 
-    weapon = this.physics.add.sprite(250, 240, 'weapon');
-    weapon.setSize(24, 16);
-    weapon.setScale(0.5);
-    weapon.body.gravity.y = 500;
-    this.physics.add.collider(weapon, layer2);
 
     var enemies = this.physics.add.group();
     let enemy = enemies.create(300, 150, 'player2');
@@ -207,7 +227,8 @@ function create() {
     // Configura la colisión entre las balas y los enemigos
     this.physics.add.collider(bullets, enemies, hitEnemy, null, this);
     this.physics.add.collider(bullets, layer2, (bullet, platform) => {
-        let bulletX = player.weapon && player.weapon.flipX ? bullet.x - 7 : bullet.x + 7;
+        let bulletX =
+            player.weapon && player.weapon.flipX ? bullet.x - 7 : bullet.x + 7;
 
         let explosion = this.add.image(bulletX, bullet.y, 'bullet-pop');
         explosion.setScale(0.2);
@@ -221,62 +242,89 @@ function create() {
     });
 
     this.input.keyboard.on('keydown-F', function (event) {
-        if (player.weapon) {
-            // Código para soltar el arma
-            // Esto dependerá de cómo has implementado el arma en tu juego
-            // Por ejemplo, podrías poner el arma en el mundo y removerla del jugador:
-
-            weapon.x = parseInt(player.x);
-            weapon.y = parseInt(player.y);
-            weapon.body.gravity.y = 500;
-
-            weapon.body.velocity.x = 100;
-            weapon.body.velocity.y = 100;
-
-            // Activar físicas de arcade para el arma
-            weapon.enableBody(true, weapon.x, weapon.y, true, true);
-
-            // Añadir gravedad al arma
-            weapon.body.setGravityY(300);
-
-            player.weapon = null; // Asume que el jugador tiene una propiedad 'weapon'
-            // Añadir colisión entre el arma y la capa del suelo
-            // Asume que 'groundLayer' es la capa del suelo
-            // this.physics.add.collider(weapon, groundLayer);
-        }
+        leftGun();
     });
 
     this.input.keyboard.on('keydown-G', (event) => {
-        var distance = Phaser.Math.Distance.Between(
-            player.x,
-            player.y,
-            weapon.x,
-            weapon.y
-        );
+        let gunNear = weapons.find((aGun) => {
+            let distance = Phaser.Math.Distance.Between(
+                player.x,
+                player.y,
+                aGun.x,
+                aGun.y
+            );
 
-        if (distance < 20) {
+            return distance < 20;
+        });
+
+        if (gunNear) {
+            leftGun();
+
             // Cambia este valor para ajustar la distancia de recogida
-            player.weapon = weapon; // Asume que el jugador tiene una propiedad 'weapon'
+            player.weapon = gunNear; // Asume que el jugador tiene una propiedad 'weapon'
+            player.weapon.body.setGravityY(0);
 
             // Desactivar físicas de arcade para el arma
-            weapon.disableBody(true);
+            player.weapon.disableBody(true);
             // Remover colisión entre el arma y la capa del suelo
             // Asume que 'groundLayer' es la capa del suelo y que has añadido colisión entre el arma y la capa del suelo
-            this.physics.world.removeCollider(weapon.body.collider);
-            player.weapon = weapon;
+            this.physics.world.removeCollider(player.weapon.body.collider);
         }
     });
 }
 
-function handlePlayerGunCollision(player, gun) {
+function leftGun() {
+    if (player.weapon) {
+        // Código para soltar el arma
+        // Esto dependerá de cómo has implementado el arma en tu juego
+        // Por ejemplo, podrías poner el arma en el mundo y removerla del jugador:
 
-    debugger
-    
+        player.weapon.x = parseInt(player.x);
+        player.weapon.y = parseInt(player.y);
+        player.weapon.body.gravity.y = 500;
+
+        player.weapon.body.velocity.x = 100;
+        player.weapon.body.velocity.y = 100;
+
+        // Activar físicas de arcade para el arma
+        player.weapon.enableBody(
+            true,
+            player.weapon.x,
+            player.weapon.y,
+            true,
+            true
+        );
+
+        // Añadir gravedad al arma
+        player.weapon.body.setGravityY(300);
+
+        delete player.weapon; // Asume que el jugador tiene una propiedad 'weapon'
+        // Añadir colisión entre el arma y la capa del suelo
+        // Asume que 'groundLayer' es la capa del suelo
+        // this.physics.add.collider(weapon, groundLayer);
+    }
+}
+
+function handlePlayerGunCollision(player, gunContainer) {
+    let weapon = this.physics.add.sprite(250, 240, 'weapon');
+    weapon.setSize(24, 16);
+    weapon.setScale(0.6);
+    weapon.body.gravity.y = 500;
+    this.physics.add.collider(weapon, layer2);
+
+    // Desactivar físicas de arcade para el arma
+    weapon.disableBody(true);
+    // Remover colisión entre el arma y la capa del suelo
+    // Asume que 'groundLayer' es la capa del suelo y que has añadido colisión entre el arma y la capa del suelo
+    this.physics.world.removeCollider(weapon.body.collider);
+    player.weapon = weapon;
+
     // Añade la arma al inventario del jugador
-    player.inventory.add(gun);
+    // player.inventory.add(gunContainer);
 
     // Elimina la arma del mundo del juego
-    gun.destroy();
+    gunContainer.destroy();
+    weapons.push(weapon);
 }
 
 // Esta función se llama cuando una bala golpea a un enemigo
@@ -288,7 +336,6 @@ function hitEnemy(bullet, enemy) {
     enemy.angle = 90;
     enemy.setSize(15, 8);
     enemy.y -= 10; // Máxima velocidad horizontal
-    
 
     let bulletX = player.weapon.flipX ? bullet.x - 7 : bullet.x + 7;
 
@@ -309,7 +356,7 @@ function fireBullet() {
         : player.weapon.x + 12;
 
     if (bullets.countActive(true) < maxBullets) {
-        let bullet = bullets.create(bulletX, player.weapon.y, 'bullet');
+        let bullet = bullets.create(bulletX, player.weapon.y - 3, 'bullet');
         bullet.setScale(0.3);
         bullet.setSize(32, 10);
         bullet.body.gravity.y = 0; // Deshabilita la gravedad para esta bala
