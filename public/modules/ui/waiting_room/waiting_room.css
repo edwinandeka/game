@@ -1,0 +1,27 @@
+.container {
+    text-align: center;
+    color: #fff;
+}
+
+#waitingRoom {
+    text-align: center;
+    margin: 10px auto;
+    width: 300;
+    box-shadow: 2px 4px 20px #ccc;
+    padding: 30px;
+    color: #fff;
+    border: 8px dashed #ccc;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#animation-container {
+    width: 160px;
+    height: 200px;
+}
+
+.arrow {
+    font-size: 32px;
+    font-family: monospace;
+}

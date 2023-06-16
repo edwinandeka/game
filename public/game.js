@@ -1,3 +1,5 @@
+socket = io();
+
 const config = {
     type: Phaser.AUTO,
     antialias: true,
@@ -16,7 +18,7 @@ const config = {
     },
     scene: {
         preload: preload,
-        create: create,
+        create: createGame,
         update: update,
     },
 };
@@ -48,9 +50,9 @@ class Coin extends Phaser.GameObjects.Sprite {
     }
 }
 
-setTimeout(() => {
-    let game = new Phaser.Game(config);
-}, 100);
+// setTimeout(() => {
+//     // let game = new Phaser.Game(config);
+// }, 100);
 
 function preload() {
     // Carga la hoja de sprites del jugador
@@ -82,7 +84,7 @@ function preload() {
     this.load.image('container', 'assets/tiles/map/tile_0009.png');
 }
 
-function create() {
+function createGame() {
     // Dibuja el cuerpo de colisión para depuración
     // this.physics.world.createDebugGraphic();
 
@@ -444,3 +446,22 @@ function update() {
         }
     });
 }
+
+
+/*
+ * @app  Bluefoler
+ *
+ * @author
+ *
+ * @license Derechos Reservados de Autor (C) dowesoft
+ */
+jQuery(document).ready(function ($) {
+    // if (location.href.contains("localhost")) {
+    //   Titan.debug();
+    // }
+   
+    Titan.view("ui", "waiting_room");
+    // Titan.view("ui", "home");
+    // document.oncontextmenu = function() {return false;};
+});
+  

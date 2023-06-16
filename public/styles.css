@@ -1,49 +1,14 @@
-
-body {
-}
-
-#joinForm,
-#waitingRoom {
-    text-align: center;
-    margin: 100px auto;
-    width: 400px;
-    border-radius: 18px;
-    box-shadow: 2px 4px 20px #ccc;
-    padding: 30px;
-    background: #2196F3;
-    color: #fff;
-    border: 8px solid #FFC107;
-    display: none !important;
-}
-
-#joinForm input,
-#joinRoomContainer input {
-    padding: 10px;
-    margin: 10px;
-    border: 4px solid  #FFC107;
-}
-
-#joinRoomContainer {
-}
-
-#playerList {
-    list-style-type: none;
-    padding: 0;
-}
-
-#playerList li {
-    margin: 5px;
-}
-
-
-#joinForm {
-    display: flex;
-    flex-direction: column;
+@font-face {
+    font-family: 'kenvector_future';
+    src: url(assets/fonts/kenvector_future.ttf) format('truetype');
 }
 
 body {
+    font-family: 'kenvector_future', sans-serif;
+    font-size: 18px;
     padding: 0;
     margin: 0;
+    background: #222;
 }
 canvas {
     display: block;
