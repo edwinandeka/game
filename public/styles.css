@@ -10,6 +10,12 @@ body {
     margin: 0;
     background: #222;
 }
+
+
+body * {
+    font-family: 'kenvector_future', sans-serif;
+}
+
 canvas {
     display: block;
     margin: 0 auto;

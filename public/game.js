@@ -1,4 +1,10 @@
 socket = io();
+window.players;
+
+socket.on('gamecontrols', (pls) => {
+    players = pls;
+    console.log('gamecontrols', players);
+});
 
 const config = {
     type: Phaser.AUTO,
@@ -17,13 +23,12 @@ const config = {
         zoom: 2, // Ajusta este valor para que se ajuste a tus necesidades
     },
     scene: {
-        preload: preload,
+        preload: preloadGame,
         create: createGame,
-        update: update,
+        update: updateGame,
     },
 };
 
-let player;
 let player2;
 let weapon;
 let weapons = [];
@@ -33,8 +38,28 @@ let layer1;
 let layer2;
 let guns;
 
-let cursors;
 let playerNameText;
+
+let animsLoaded = [];
+let imagesLoaded = [];
+
+let playersImages = [
+    'player0',
+    'player1',
+    'player2',
+    'player3',
+    'player4',
+    'player5',
+    'player6',
+    'player7',
+    'player8',
+    'player9',
+    'player10',
+    'player11',
+    'player12',
+];
+
+let playersPhaser = [];
 
 class Coin extends Phaser.GameObjects.Sprite {
     constructor(scene, x, y, texture, frame) {
@@ -54,17 +79,26 @@ class Coin extends Phaser.GameObjects.Sprite {
 //     // let game = new Phaser.Game(config);
 // }, 100);
 
-function preload() {
-    // Carga la hoja de sprites del jugador
-    this.load.spritesheet('player', 'assets/player.png', {
-        frameWidth: 16,
-        frameHeight: 24,
-    });
-
-    this.load.spritesheet('player2', 'assets/player2.png', {
-        frameWidth: 16,
-        frameHeight: 24,
-    });
+function preloadGame() {
+    console.log('preloadGame');
+    // Carga la hoja de sprites de cada jugador
+    for (let i = 0; i < players.length; i++) {
+        const p = players[i];
+        // id:"3u1XrCw5zL9AZq7JAAAC"
+        // name:"333"
+        // selectedPlayerIndex:3
+        if (!imagesLoaded.includes(p.selectedPlayerIndex)) {
+            console.log('load image,  ', playersImages[p.selectedPlayerIndex]);
+            this.load.spritesheet(
+                'player' + p.selectedPlayerIndex,
+                `assets/${playersImages[p.selectedPlayerIndex]}.png`,
+                {
+                    frameWidth: 16,
+                    frameHeight: 24,
+                }
+            );
+        }
+    }
 
     // Carga el archivo del tileset
     // this.load.tilemapTiledJSON('map', 'assets/level1.json');
@@ -82,9 +116,13 @@ function preload() {
     this.load.image('bullet', 'assets/tiles/laserPurple.png');
     this.load.image('bullet-pop', 'assets/tiles/laserBlueBurst.png');
     this.load.image('container', 'assets/tiles/map/tile_0009.png');
+
+    console.log('preloadGame finished...');
 }
 
 function createGame() {
+    console.log('createGame');
+
     // Dibuja el cuerpo de colisión para depuración
     // this.physics.world.createDebugGraphic();
 
@@ -95,54 +133,50 @@ function createGame() {
     this.cameras.main.setBackgroundColor('#ffffff');
     // Configura el zoom de la cámara.
     this.cameras.main.setZoom(2.5); // Ajusta este valor para que se ajuste a tus necesidades
+    for (let j = 0; j < players.length; j++) {
+        const p = players[j];
 
-    this.anims.create({
-        key: 'idle',
-        frames: this.anims.generateFrameNumbers('player', {
-            frames: [4, 5, 6, 7],
-        }),
-        frameRate: 10,
-        repeat: -1,
-    });
+        if (!animsLoaded.includes(p.selectedPlayerIndex)) {
+            this.anims.create({
+                key: 'idle' + p.selectedPlayerIndex,
+                frames: this.anims.generateFrameNumbers(
+                    'player' + p.selectedPlayerIndex,
+                    {
+                        frames: [4, 5, 6, 7],
+                    }
+                ),
+                frameRate: 10,
+                repeat: -1,
+            });
 
-    this.anims.create({
-        key: 'jump',
-        frames: this.anims.generateFrameNumbers('player', {
-            frames: [8, 9, 10, 11],
-        }),
-        frameRate: 5,
-        repeat: -1,
-    });
+            this.anims.create({
+                key: 'jump' + p.selectedPlayerIndex,
+                frames: this.anims.generateFrameNumbers(
+                    'player' + p.selectedPlayerIndex,
+                    {
+                        frames: [8, 9, 10, 11],
+                    }
+                ),
+                frameRate: 35,
+                repeat: -1,
+            });
 
-    this.anims.create({
-        key: 'run',
-        frames: this.anims.generateFrameNumbers('player', {
-            frames: [8, 9, 10, 11],
-        }),
-        frameRate: 30,
-        repeat: -1,
-    });
-
-    this.anims.create({
-        key: 'idle2',
-        frames: this.anims.generateFrameNumbers('player2', {
-            frames: [4, 5, 6, 7],
-        }),
-        frameRate: 10,
-        repeat: -1,
-    });
-
-    this.anims.create({
-        key: 'jump2',
-        frames: this.anims.generateFrameNumbers('player2', {
-            frames: [8, 9, 10, 11],
-        }),
-        frameRate: 30,
-        repeat: -1,
-    });
+            this.anims.create({
+                key: 'run' + p.selectedPlayerIndex,
+                frames: this.anims.generateFrameNumbers(
+                    'player' + p.selectedPlayerIndex,
+                    {
+                        frames: [8, 9, 10, 11],
+                    }
+                ),
+                frameRate: 30,
+                repeat: -1,
+            });
+        }
+    }
 
     // Habilita los controles del teclado
-    cursors = this.input.keyboard.createCursorKeys();
+    // cursors = this.input.keyboard.createCursorKeys();
 
     /************************* */
     // Create the tilemap
@@ -154,7 +188,7 @@ function createGame() {
     // Create the layers based on layer names from Tiled
     layer1 = map.createLayer('environment', tileset);
     layer3 = map.createLayer('fondo', tileset);
-    layer2 = map.createDynamicLayer('platforms', tileset);
+    layer2 = map.createLayer('platforms', tileset);
 
     // Configura todos los tiles para ser colisionables basándote en sus propiedades personalizadas en Tiled.
     layer2.setCollisionByProperty({ collides: true });
@@ -162,16 +196,25 @@ function createGame() {
     layer2.setCollisionBetween(1, 112, { collides: true });
     layer1.setAlpha(0.7);
 
-    // Crea al jugador
-    player = this.physics.add.sprite(250, 140, 'player');
-    player.setSize(8, 15);
-    player.setScale(1.5);
-    player.setOffset(3, 9);
-    player.body.gravity.y = 500;
-    player.prevX = player.x;
-    player.prevY = player.y;
-    player.body.maxVelocity.x = 100; // Máxima velocidad horizontal
-    player.body.drag.x = 1000; // Aceleración o "resistencia" horizontal
+    // Crea a los jugadores
+    players.forEach((p) => {
+        let player = this.physics.add.sprite(
+            250,
+            140,
+            'player' + p.selectedPlayerIndex
+        );
+        player.setSize(8, 15);
+        player.setScale(1.5);
+        player.setOffset(3, 9);
+        player.body.gravity.y = 500;
+        player.body.maxVelocity.x = 100; // Máxima velocidad horizontal
+        player.body.drag.x = 1000; // Aceleración o "resistencia" horizontal
+        p.x = playersPhaser.push(player);
+        // Crea el texto del nombre del jugador
+        let playerNameText = this.add.bitmapText(0, 0, 'atari', p.name, 6);
+        player.text = playerNameText;
+        player.socketPlayer = p;
+    });
 
     gunContainer = map.createFromObjects('contenedores', {
         name: 'gun',
@@ -181,56 +224,38 @@ function createGame() {
 
     gunContainer.forEach((gunContainer) => {
         this.physics.add.existing(gunContainer);
-        // Habilita la colisión entre el personaje y la capa de tiles.
+        // Habilita la colisión entre el personajes y la capa de tiles.
         this.physics.add.collider(
-            player,
+            playersPhaser,
             gunContainer,
             handlePlayerGunCollision,
             null,
             this
         );
     });
-
-    // Ajusta la cámara al tamaño del mapa
-    this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
-    // Hace que la cámara siga al personaje
-    this.cameras.main.startFollow(player);
-    this.physics.add.collider(layer2, player);
-
-    /************************* */
-
-    // Crea el texto del nombre del jugador
-    playerNameText = this.add.bitmapText(0, 0, 'atari', 'Eka', 6);
-
-    // Añade un detector de teclas para la barra espaciadora
-    this.spaceKey = this.input.keyboard.addKey(
-        Phaser.Input.Keyboard.KeyCodes.SPACE
-    );
-
-
-    var enemies = this.physics.add.group();
-    let enemy = enemies.create(300, 150, 'player2');
-    enemy.body.maxVelocity.x = 100; // Máxima velocidad horizontal
-    enemy.body.drag.x = 1000; // Aceleración o "resistencia" horizontal
-    enemy.setCollideWorldBounds(true);
-    enemy.setSize(8, 15);
-    enemy.setScale(1.5);
-    enemy.setOffset(3, 9);
-    enemy.body.gravity.y = 500;
-    enemy.prevX = enemy.x;
-    enemy.prevY = enemy.y;
-    this.physics.add.collider(enemy, layer2);
-    this.physics.add.collider(enemy, player);
-
-    // this.physics.add.overlap(player, weapon, pickUpWeapon, null, this);
-
+    //
+    //     // Ajusta la cámara al tamaño del mapa
+    //     this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+    //     // Hace que la cámara siga al personaje
+    this.cameras.main.startFollow(playersPhaser);
+    this.physics.add.collider(layer2, playersPhaser);
+    //
+    //     /************************* */
+    //
+    //     // Añade un detector de teclas para la barra espaciadora
+    //     this.spaceKey = this.input.keyboard.addKey(
+    //         Phaser.Input.Keyboard.KeyCodes.SPACE
+    //     );
+    //
     bullets = this.physics.add.group();
 
     // Configura la colisión entre las balas y los enemigos
-    this.physics.add.collider(bullets, enemies, hitEnemy, null, this);
+    this.physics.add.collider(bullets, playersPhaser, hitEnemy, null, this);
     this.physics.add.collider(bullets, layer2, (bullet, platform) => {
         let bulletX =
-            player.weapon && player.weapon.flipX ? bullet.x - 7 : bullet.x + 7;
+            bullet.player && bullet.player.weapon && bullet.player.weapon.flipX
+                ? bullet.x - 7
+                : bullet.x + 7;
 
         let explosion = this.add.image(bulletX, bullet.y, 'bullet-pop');
         explosion.setScale(0.2);
@@ -240,39 +265,44 @@ function createGame() {
             explosion.destroy();
         }, 50);
 
-        bullet.destroy();
+        // bullet.destroy();
+
+        bullet.visible = false;
+        bullet.active = false;
     });
+    //
+    //     this.input.keyboard.on('keydown-F', function (event) {
+    //         leftGun();
+    //     });
+    //
+    //     this.input.keyboard.on('keydown-G', (event) => {
+    //         let gunNear = weapons.find((aGun) => {
+    //             let distance = Phaser.Math.Distance.Between(
+    //                 player.x,
+    //                 player.y,
+    //                 aGun.x,
+    //                 aGun.y
+    //             );
+    //
+    //             return distance < 20;
+    //         });
+    //
+    //         if (gunNear) {
+    //             leftGun();
+    //
+    //             // Cambia este valor para ajustar la distancia de recogida
+    //             player.weapon = gunNear; // Asume que el jugador tiene una propiedad 'weapon'
+    //             player.weapon.body.setGravityY(0);
+    //
+    //             // Desactivar físicas de arcade para el arma
+    //             player.weapon.disableBody(true);
+    //             // Remover colisión entre el arma y la capa del suelo
+    //             // Asume que 'groundLayer' es la capa del suelo y que has añadido colisión entre el arma y la capa del suelo
+    //             this.physics.world.removeCollider(player.weapon.body.collider);
+    //         }
+    //     });
 
-    this.input.keyboard.on('keydown-F', function (event) {
-        leftGun();
-    });
-
-    this.input.keyboard.on('keydown-G', (event) => {
-        let gunNear = weapons.find((aGun) => {
-            let distance = Phaser.Math.Distance.Between(
-                player.x,
-                player.y,
-                aGun.x,
-                aGun.y
-            );
-
-            return distance < 20;
-        });
-
-        if (gunNear) {
-            leftGun();
-
-            // Cambia este valor para ajustar la distancia de recogida
-            player.weapon = gunNear; // Asume que el jugador tiene una propiedad 'weapon'
-            player.weapon.body.setGravityY(0);
-
-            // Desactivar físicas de arcade para el arma
-            player.weapon.disableBody(true);
-            // Remover colisión entre el arma y la capa del suelo
-            // Asume que 'groundLayer' es la capa del suelo y que has añadido colisión entre el arma y la capa del suelo
-            this.physics.world.removeCollider(player.weapon.body.collider);
-        }
-    });
+    console.log('createGame finished...');
 }
 
 function leftGun() {
@@ -339,7 +369,10 @@ function hitEnemy(bullet, enemy) {
     enemy.setSize(15, 8);
     enemy.y -= 10; // Máxima velocidad horizontal
 
-    let bulletX = player.weapon.flipX ? bullet.x - 7 : bullet.x + 7;
+    let bulletX =
+        bullet.player && bullet.player.weapon && bullet.player.weapon.flipX
+            ? bullet.x - 7
+            : bullet.x + 7;
 
     let explosion = this.add.image(bulletX, bullet.y, 'bullet-pop');
     explosion.setScale(0.2);
@@ -348,11 +381,13 @@ function hitEnemy(bullet, enemy) {
     setTimeout(() => {
         explosion.destroy();
     }, 50);
-
-    bullet.destroy();
+    // bullet.destroy();
+    bullet.visible = false;
+    bullet.active = false;
+    // bullet.destroy();
 }
 
-function fireBullet() {
+function fireBullet(player) {
     let bulletX = player.weapon.flipX
         ? player.weapon.x - 14
         : player.weapon.x + 12;
@@ -362,7 +397,7 @@ function fireBullet() {
         bullet.setScale(0.3);
         bullet.setSize(32, 10);
         bullet.body.gravity.y = 0; // Deshabilita la gravedad para esta bala
-
+        bullet.player = player;
         if (player.weapon.flipX) {
             // Dispara a la izquierda
             bullet.setVelocityX(-400);
@@ -373,80 +408,108 @@ function fireBullet() {
     }
 }
 
-function update() {
-    // this.physics.world.wrap(player, 5);
+function updateGame() {
+    var midX = 0;
+    var midY = 0;
 
-    // Controla el movimiento del jugador
-    if (cursors.left.isDown) {
-        player.setOffset(5, 9);
+    playersPhaser.forEach((player) => {
+        midX += player.x;
+        midY += player.y;
+        this.physics.world.wrap(player, 5);
 
-        player.setVelocityX(-160);
-        player.setFlipX(true); // Mira hacia la izquierda
+        let controlPlayer = players.find((p) => p.id == player.socketPlayer.id);
 
-        if (player.body.onFloor()) {
-            // solo reproduce la animación 'run' si el jugador está en el suelo
-            player.anims.play('run', true);
+        let cursors = controlPlayer.controls;
+
+        // Controla el movimiento del jugador
+        if (cursors.left) {
+            player.setOffset(5, 9);
+
+            player.setVelocityX(-160);
+            player.setFlipX(true); // Mira hacia la izquierda
+
+            if (player.body.onFloor()) {
+                // solo reproduce la animación 'run' si el jugador está en el suelo
+                player.anims.play(
+                    'run' + player.socketPlayer.selectedPlayerIndex,
+                    true
+                );
+            }
+        } else if (cursors.right) {
+            player.setOffset(3, 9);
+
+            player.setVelocityX(160);
+            player.setFlipX(false); // Mira hacia la derecha
+
+            if (player.body.onFloor()) {
+                // solo reproduce la animación 'run' si el jugador está en el suelo
+                player.anims.play(
+                    'run' + player.socketPlayer.selectedPlayerIndex,
+                    true
+                );
+            }
+        } else {
+            player.setVelocityX(0);
+            if (player.body.onFloor()) {
+                // solo reproduce la animación 'idle' si el jugador está en el suelo
+                player.anims.play(
+                    'idle' + player.socketPlayer.selectedPlayerIndex,
+                    true
+                );
+            }
         }
-    } else if (cursors.right.isDown) {
-        player.setOffset(3, 9);
 
-        player.setVelocityX(160);
-        player.setFlipX(false); // Mira hacia la derecha
-
-        if (player.body.onFloor()) {
-            // solo reproduce la animación 'run' si el jugador está en el suelo
-            player.anims.play('run', true);
+        if (cursors.a && player.body.onFloor()) {
+            player.setVelocityY(-250); // Ajusta este valor según lo alto que quieras que el jugador salte
+            player.anims.play(
+                'jump' + player.socketPlayer.selectedPlayerIndex,
+                true
+            ); // reproduce la animación 'jump' cuando el jugador está saltando
         }
-    } else {
-        player.setVelocityX(0);
-        if (player.body.onFloor()) {
-            // solo reproduce la animación 'idle' si el jugador está en el suelo
-            player.anims.play('idle', true);
+
+        // Actualiza la posición del texto del nombre del jugador para que esté encima del personaje
+        player.text.x = player.x - 10;
+        player.text.y = player.y - 25; // Ajusta este valor según sea necesario
+
+        // Si el jugador tiene un arma, actualizar la posición del arma para que coincida con la del jugador
+        if (player.weapon) {
+            if (player.flipX) {
+                player.weapon.x = player.x - 10;
+                player.weapon.setFlipX(true);
+            }
+            // Si el jugador no está volteado, pon el arma a la derecha
+            else {
+                player.weapon.x = player.x + 10;
+                player.weapon.setFlipX(false);
+            }
+            player.weapon.y = player.y + 10;
         }
-    }
 
-    if (cursors.up.isDown && player.body.onFloor()) {
-        player.setVelocityY(-250); // Ajusta este valor según lo alto que quieras que el jugador salte
-        player.anims.play('jump', true); // reproduce la animación 'jump' cuando el jugador está saltando
-    }
-
-    // Actualiza la posición del texto del nombre del jugador para que esté encima del personaje
-    playerNameText.x = player.x - 10;
-    playerNameText.y = player.y - 16; // Ajusta este valor según sea necesario
-
-    // Si el jugador tiene un arma, actualizar la posición del arma para que coincida con la del jugador
-    if (player.weapon) {
-        if (player.flipX) {
-            player.weapon.x = player.x - 10;
-            player.weapon.setFlipX(true);
-        }
-        // Si el jugador no está volteado, pon el arma a la derecha
-        else {
-            player.weapon.x = player.x + 10;
-            player.weapon.setFlipX(false);
-        }
-        player.weapon.y = player.y + 10;
-    }
-
-    if (Phaser.Input.Keyboard.JustDown(cursors.space) && player.weapon) {
-        fireBullet();
-    }
-
-    // Itera sobre todas las balas en el grupo
-    bullets.children.each((bullet) => {
-        // Si la bala ha salido de la pantalla...
-        if (
-            bullet.x < 0 ||
-            bullet.x > this.game.config.width ||
-            bullet.y < 0 ||
-            bullet.y > this.game.config.height
-        ) {
-            // ...desactiva y oculta la bala
-            bullet.destroy();
+        if (cursors.b && player.weapon) {
+            fireBullet(player);
         }
     });
-}
 
+    // // Itera sobre todas las balas en el grupo
+    // bullets.children.each((bullet) => {
+    //     // Si la bala ha salido de la pantalla...
+    //     if (
+    //         bullet.x < 0 ||
+    //         bullet.x > this.game.config.width ||
+    //         bullet.y < 0 ||
+    //         bullet.y > this.game.config.height
+    //     ) {
+    //         // ...desactiva y oculta la bala
+    //         bullet.destroy();
+    //     }
+    // });
+
+    midX /= playersPhaser.length;
+    midY /= playersPhaser.length;
+
+    // Haz que la cámara siga el punto medio
+    this.cameras.main.startFollow({ x: midX, y: midY });
+}
 
 /*
  * @app  Bluefoler
@@ -459,9 +522,10 @@ jQuery(document).ready(function ($) {
     // if (location.href.contains("localhost")) {
     //   Titan.debug();
     // }
-   
-    Titan.view("ui", "waiting_room");
+
+    // Titan.view("ui", "waiting_room");
     // Titan.view("ui", "home");
+    Titan.view('ui', 'home');
+    // Titan.view("ui", "gamepad");
     // document.oncontextmenu = function() {return false;};
 });
-  

@@ -19,30 +19,29 @@ Titan.modules.create({
      * @return {void}
      */
     createRoom: function () {
-        let playerName = this.playerNameInput.val();
-        socket.emit('createRoom', playerName);
-
+        socket.emit('createRoom', {});
         socket.on('roomCreated', (roomCode) => {
             this.roomCodeInput.val(roomCode);
-			localStorage.setItem('roomCode', roomCode)
+            localStorage.setItem('roomCode', roomCode);
+
+            Titan.view('ui', 'waiting_room');
         });
     },
 
-  /**
+    /**
      * @name joinRoom
      * @description [descripción de la funcion]
      * @return {void}
      */
-  joinRoom: function () {
-	let playerName = this.playerNameInput.val();
-	let roomCode = this.roomCodeInput.val();
-	localStorage.setItem('roomCode', roomCode)
+    joinRoom: function () {
+        let playerName = this.playerNameInput.val();
+        let roomCode = this.roomCodeInput.val().toUpperCase();
+        localStorage.setItem('roomCode', roomCode);
 
-	socket.emit('joinRoom', roomCode, playerName);
+        socket.emit('joinRoom', roomCode, playerName);
 
-	socket.on('roomJoined', (roomCode) => {
-		Titan.view("ui", "waiting_room");
-	});
-},
-	
+        socket.on('roomJoined', (player) => {
+            Titan.view('ui', 'select_player', undefined, { player: player });
+        });
+    },
 });

@@ -9,7 +9,8 @@ const base64url = require('base64-url');
 function makeid(length) {
     var result = '';
     var characters =
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        // 'ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     var charactersLength = characters.length;
     for (var i = 0; i < length; i++) {
         result += characters.charAt(
@@ -53,14 +54,29 @@ io.on('connection', (socket) => {
 
     // Cuando un jugador solicita unirse a una sala
     socket.on('joinRoom', (roomId, playerName) => {
-
         console.log(rooms);
         // Verificar si la sala existe
         if (rooms.hasOwnProperty(roomId)) {
             // Agregar al jugador a la sala existente
-            rooms[roomId].push({ id: socket.id, name: playerName });
+            let player = {
+                id: socket.id,
+                name: playerName,
+                controls: {
+                    up: { isDown: false },
+                    down: { isDown: false },
+                    left: { isDown: false },
+                    right: { isDown: false },
+                    a: { isDown: false },
+                    b: { isDown: false },
+                    left: { isDown: false },
+                    pause: { isDown: false },
+                },
+            };
+            rooms[roomId].push(player);
+
+            socket.player = player;
             socket.join(roomId);
-            socket.emit('roomJoined', roomId);
+            socket.emit('roomJoined', player);
             console.log('roomJoined', roomId);
             io.to(roomId).emit('playerList', rooms[roomId]); // Enviar lista de jugadores a todos en la sala
         } else {
@@ -79,14 +95,38 @@ io.on('connection', (socket) => {
     });
 
     // Cuando un jugador crea una nueva sala
-    socket.on('createRoom', (playerName) => {
-        const roomId = makeid(6); // Generar un ID único para la sala
+    socket.on('createRoom', () => {
+        const roomId = makeid(1); // Generar un ID único para la sala
         const roomCode = roomId; // Codificar el ID de sala en un código
-        // Crear la sala y agregar al jugador como el primer miembro
-         rooms[roomId] = [];
+        // Crear la sala
+        rooms[roomId] = [];
         socket.join(roomId);
         console.log('roomCreated', roomId);
         socket.emit('roomCreated', roomId);
+    });
+
+    socket.on('startGame', (roomId) => {
+        console.log('startGame', roomId);
+        socket.player.start = true;
+
+        let accepted = rooms[roomId].map(p=>p.start).filter(r=>r)
+        
+        if(accepted.length == rooms[roomId].length){
+            io.to(roomId).emit('startGame', roomId);
+        }
+
+    });
+
+    socket.on('selectPlayer', (selectedPlayerIndex, roomId) => {
+        socket.player.selectedPlayerIndex = selectedPlayerIndex;
+        io.to(roomId).emit('gamecontrols', rooms[roomId]);
+    });
+
+    socket.on('controls', (buttons, roomId) => {
+        if (socket.player) {
+            socket.player.controls = buttons;
+            io.to(roomId).emit('gamecontrols', rooms[roomId]);
+        }
     });
 });
 
