@@ -70,6 +70,13 @@ img#imgQrCode {
     width: 320px;
 }
 
+span#roomCode {
+    font-family: monospace;
+    letter-spacing: 7px;
+    font-size: 42px;
+    font-weight: bold;
+}
+
 @media (max-width: 712px) {
     #waitingRoom {
     }
