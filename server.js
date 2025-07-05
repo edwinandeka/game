@@ -5,7 +5,42 @@ const io = require('socket.io')(http);
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const base64url = require('base64-url');
+const os = require('os');
+const QRCode = require('qrcode');
+const { log } = require('console');
 
+// Función para obtener la dirección IP local
+/**
+ * Devuelve la IP asignada a la interfaz activa de red que sale a Internet.
+ */
+async function getLocalIP() {
+  try {
+    const gatewayModule = await import('default-gateway');
+
+    // ✅ usamos gateway4async() desde .default
+    const result = await gatewayModule.default.gateway4async();
+
+    const ifaceName = result.int;
+
+    const interfaces = os.networkInterfaces();
+    const iface = interfaces[ifaceName];
+
+    if (!iface) return null;
+
+    for (const addr of iface) {
+      if (addr.family === 'IPv4' && !addr.internal) {
+        return addr.address;
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error('[getLocalIP] Error:', error);
+    return null;
+  }
+}
+
+//  generar un ID aleatorio para la sala
 function makeid(length) {
     var result = '';
     var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -95,13 +130,26 @@ io.on('connection', (socket) => {
 
     // Cuando un jugador crea una nueva sala
     socket.on('createRoom', () => {
-        const roomId = makeid(1); // Generar un ID único para la sala
-        const roomCode = roomId; // Codificar el ID de sala en un código
-        // Crear la sala
+        const roomId = makeid(4); // Generar un ID único para la sala
         rooms[roomId] = [];
         socket.join(roomId);
         console.log('roomCreated', roomId);
-        socket.emit('roomCreated', roomId);
+
+        getLocalIP().then(async (localIP) => {
+
+            const wsURL = `http://${localIP}:${port}/?roomId=${roomId}`;
+            const url = `http://${localIP}:${port}`;
+
+            // generar código QR
+            const qrDataURL = await QRCode.toDataURL(wsURL);
+
+            socket.emit('roomCreated', {
+                roomId,
+                qrCode: qrDataURL,
+                wsURL,
+                url,
+            });
+        });
     });
 
     socket.on('startGame', (roomId) => {

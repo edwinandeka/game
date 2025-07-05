@@ -1,0 +1,19 @@
+{
+    "id": "smash-blasters",
+    "name": "Smash Blasters",
+    "short_name": "Smash Blasters",
+    "start_url": "./index.html",
+    "description":"juego multijugador de plataforma.",
+    "display": "standalone",
+    "orientation": "landscape",
+    "background_color": "#222",
+    "lang": "es-419",
+    "theme_color": "#222",
+    "icons": [
+        {
+            "src": "phone.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

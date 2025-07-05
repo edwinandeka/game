@@ -12,6 +12,13 @@ Titan.modules.create({
      * @constructor @description inicia los componentes del módulo
      */
     ready: function () {
+        const params = new URLSearchParams(window.location.search);
+        const roomIdFromURL = params.get('roomId');
+
+        if (roomIdFromURL) {
+            this.roomCodeInput.val(roomIdFromURL.toUpperCase());
+        }
+
         if (window.isMobile) {
             this.createBtn.remove();
         } else {
@@ -28,9 +35,17 @@ Titan.modules.create({
      */
     createRoom: function () {
         socket.emit('createRoom', {});
-        socket.on('roomCreated', (roomCode) => {
-            this.roomCodeInput.val(roomCode);
-            localStorage.setItem('roomCode', roomCode);
+        socket.on('roomCreated', ({
+            roomId,
+            qrCode,
+            wsURL,
+            url,
+        }) => {
+
+            this.roomCodeInput.val(roomId);
+            localStorage.setItem('roomCode', roomId);
+            localStorage.setItem('qrCode', qrCode);
+            localStorage.setItem('wsURL', url);
 
             Titan.view('ui', 'waiting_room');
         });

@@ -13,8 +13,12 @@ Titan.modules.create({
      */
     ready: function () {
         let roomCode = localStorage.getItem('roomCode');
+        let qrCode = localStorage.getItem('qrCode');
+        let wsURL = localStorage.getItem('wsURL');
 
         this.roomCode.text(roomCode);
+        this.wsURL.text(wsURL);
+        this.imgQrCode.attr('src', qrCode);
 
         selectedPlayerIndex = 0;
 
