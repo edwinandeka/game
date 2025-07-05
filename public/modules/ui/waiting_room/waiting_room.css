@@ -66,6 +66,9 @@ button {
     background-position-y: -28px;
 }
 
+img#imgQrCode {
+    width: 320px;
+}
 
 @media (max-width: 712px) {
     #waitingRoom {
