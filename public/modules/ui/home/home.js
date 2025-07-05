@@ -11,7 +11,15 @@ Titan.modules.create({
     /*
      * @constructor @description inicia los componentes del módulo
      */
-    ready: function () {},
+    ready: function () {
+        if (window.isMobile) {
+            this.createBtn.remove();
+        } else {
+            this.joinBtn.remove();
+            this.playerNameInput.remove();
+            this.roomCodeInput.remove();
+        }
+    },
 
     /**
      * @name createRoom
@@ -38,10 +46,23 @@ Titan.modules.create({
         let roomCode = this.roomCodeInput.val().toUpperCase();
         localStorage.setItem('roomCode', roomCode);
 
-        socket.emit('joinRoom', roomCode, playerName);
+        if (playerName != '' && roomCode != '') {
+            socket.emit('joinRoom', roomCode, playerName);
 
-        socket.on('roomJoined', (player) => {
-            Titan.view('ui', 'select_player', undefined, { player: player });
-        });
+            socket.once('roomNotFound', () => {
+                toast('Ingresa un código de la sala válido');
+            });
+
+            socket.once('roomJoined', (player) => {
+                Titan.view('ui', 'select_player');
+            });
+        } else {
+            if (playerName == '') {
+                toast('Ingresa tu nombre');
+            }
+            if (roomCode != '') {
+                toast('Ingresa el código de la sala');
+            }
+        }
     },
 });

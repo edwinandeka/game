@@ -72,7 +72,7 @@ Titan.modules.create({
 
             this.joystick = this.gamepad.addJoystick(
                 100,
-                visibleHeight - 180,
+                visibleHeight - (isMobile? 160: 120 ),
                 1.2,
                 'gamepad'
             );
@@ -90,6 +90,14 @@ Titan.modules.create({
                 1.0,
                 'gamepad',
                 'b'
+            );
+
+            this.button = this.gamepad.addButton(
+                visibleWidth / 2,
+                60,
+                1.0,
+                'gamepad',
+                'menu'
             );
         }
 
@@ -163,6 +171,17 @@ Titan.modules.create({
         };
 
         var game = new Phaser.Game(configGamepad);
+
+
+
+        socket.once('menu', (player) => {
+            console.log('CONTROLLER DESTRUIDO >> ' + player);
+
+            game.destroy(true);
+            Titan.view('ui', 'select_player');
+
+        });
+
     },
 
     /**

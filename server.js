@@ -8,9 +8,8 @@ const base64url = require('base64-url');
 
 function makeid(length) {
     var result = '';
-    var characters =
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        // 'ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    // 'ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     var charactersLength = characters.length;
     for (var i = 0; i < length; i++) {
         result += characters.charAt(
@@ -109,17 +108,19 @@ io.on('connection', (socket) => {
         console.log('startGame', roomId);
         socket.player.start = true;
 
-        let accepted = rooms[roomId].map(p=>p.start).filter(r=>r)
-        
-        if(accepted.length == rooms[roomId].length){
+        let accepted = rooms[roomId].map((p) => p.start).filter((r) => r);
+
+        if (accepted.length == rooms[roomId].length) {
             io.to(roomId).emit('startGame', roomId);
         }
-
     });
 
     socket.on('selectPlayer', (selectedPlayerIndex, roomId) => {
-        socket.player.selectedPlayerIndex = selectedPlayerIndex;
-        io.to(roomId).emit('gamecontrols', rooms[roomId]);
+        if (socket.player) {
+            socket.player.selectedPlayerIndex = selectedPlayerIndex;
+            io.to(roomId).emit('playerList', rooms[roomId]);
+            io.to(roomId).emit('gamecontrols', rooms[roomId]);
+        }
     });
 
     socket.on('controls', (buttons, roomId) => {
@@ -127,6 +128,11 @@ io.on('connection', (socket) => {
             socket.player.controls = buttons;
             io.to(roomId).emit('gamecontrols', rooms[roomId]);
         }
+    });
+
+    socket.on('menu', (roomId) => {
+        rooms[roomId].forEach((p) => (p.start = false));
+        io.to(roomId).emit('menu', socket.player.name);
     });
 });
 

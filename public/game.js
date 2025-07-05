@@ -1,5 +1,20 @@
 socket = io();
+
+// Maneja el evento 'disconnect' para recargar la página
+socket.on('disconnect', () => {
+    location.reload(); // Recargar la página
+});
+
 window.players;
+
+window.isMobile = false;
+if (
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+    )
+) {
+    window.isMobile = true;
+}
 
 socket.on('gamecontrols', (pls) => {
     players = pls;
@@ -42,6 +57,8 @@ let playerNameText;
 
 let animsLoaded = [];
 let imagesLoaded = [];
+
+let levels = ['level1', 'level2'];
 
 let playersImages = [
     'player0',
@@ -100,9 +117,15 @@ function preloadGame() {
         }
     }
 
+    this.load.spritesheet('ghost', `assets/ghost.png`, {
+        frameWidth: 16,
+        frameHeight: 24,
+    });
+
     // Carga el archivo del tileset
     // this.load.tilemapTiledJSON('map', 'assets/level1.json');
-    this.load.tilemapTiledJSON('map', 'assets/level2.json');
+    let level = Math.round(Math.random()) + 1;
+    this.load.tilemapTiledJSON('map', `assets/level${level}.json`);
 
     this.load.image('tiles', 'assets/tileMap.png');
 
@@ -175,6 +198,34 @@ function createGame() {
         }
     }
 
+    // animaciones del fantasma
+    this.anims.create({
+        key: 'idle-ghost',
+        frames: this.anims.generateFrameNumbers('ghost', {
+            frames: [4, 5, 6, 7],
+        }),
+        frameRate: 10,
+        repeat: -1,
+    });
+
+    this.anims.create({
+        key: 'jump-ghost',
+        frames: this.anims.generateFrameNumbers('ghost', {
+            frames: [8, 9, 10, 11],
+        }),
+        frameRate: 35,
+        repeat: -1,
+    });
+
+    this.anims.create({
+        key: 'run-ghost',
+        frames: this.anims.generateFrameNumbers('ghost', {
+            frames: [8, 9, 10, 11],
+        }),
+        frameRate: 30,
+        repeat: -1,
+    });
+
     // Habilita los controles del teclado
     // cursors = this.input.keyboard.createCursorKeys();
 
@@ -209,7 +260,7 @@ function createGame() {
         player.body.gravity.y = 500;
         player.body.maxVelocity.x = 100; // Máxima velocidad horizontal
         player.body.drag.x = 1000; // Aceleración o "resistencia" horizontal
-        p.x = playersPhaser.push(player);
+        playersPhaser.push(player);
         // Crea el texto del nombre del jugador
         let playerNameText = this.add.bitmapText(0, 0, 'atari', p.name, 6);
         player.text = playerNameText;
@@ -226,7 +277,7 @@ function createGame() {
         this.physics.add.existing(gunContainer);
         // Habilita la colisión entre el personajes y la capa de tiles.
         this.physics.add.collider(
-            playersPhaser,
+            playersPhaser.filter((p) => !p.isGhost),
             gunContainer,
             handlePlayerGunCollision,
             null,
@@ -237,8 +288,23 @@ function createGame() {
     //     // Ajusta la cámara al tamaño del mapa
     //     this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
     //     // Hace que la cámara siga al personaje
-    this.cameras.main.startFollow(playersPhaser);
+    // this.cameras.main.startFollow(playersPhaser.filter((p) => !p.isGhost));
     this.physics.add.collider(layer2, playersPhaser);
+
+    // let tiles = layer2.getTilesWithin(0, 0, layer2.width, layer2.height);
+    // for(let i = 0; i < tiles.length; i++) {
+    //     tiles[i].setCollision(false, false, true, false);
+    // }
+
+    // this.physics.add.collider(playersPhaser, layer2, function(player, platform){
+    //     debugger
+    //     if (player.body.touching.down) {
+    //         return true;  // Colisiona normalmente cuando el jugador está cayendo hacia abajo
+    //     } else {
+    //         return false;  // No colisiona cuando el jugador está debajo de la plataforma
+    //     }
+    // });
+    
     //
     //     /************************* */
     //
@@ -265,10 +331,8 @@ function createGame() {
             explosion.destroy();
         }, 50);
 
-        // bullet.destroy();
-
-        bullet.visible = false;
-        bullet.active = false;
+        delete bullet.player;
+        bullet.destroy();
     });
     //
     //     this.input.keyboard.on('keydown-F', function (event) {
@@ -338,29 +402,31 @@ function leftGun() {
 }
 
 function handlePlayerGunCollision(player, gunContainer) {
-    let weapon = this.physics.add.sprite(250, 240, 'weapon');
-    weapon.setSize(24, 16);
-    weapon.setScale(0.6);
-    weapon.body.gravity.y = 500;
-    this.physics.add.collider(weapon, layer2);
+    if (!player.isGhost) {
+        let weapon = this.physics.add.sprite(250, 240, 'weapon');
+        weapon.setSize(24, 16);
+        weapon.setScale(0.6);
+        weapon.body.gravity.y = 500;
+        this.physics.add.collider(weapon, layer2);
 
-    // Desactivar físicas de arcade para el arma
-    weapon.disableBody(true);
-    // Remover colisión entre el arma y la capa del suelo
-    // Asume que 'groundLayer' es la capa del suelo y que has añadido colisión entre el arma y la capa del suelo
-    this.physics.world.removeCollider(weapon.body.collider);
-    player.weapon = weapon;
+        // Desactivar físicas de arcade para el arma
+        weapon.disableBody(true);
+        // Remover colisión entre el arma y la capa del suelo
+        // Asume que 'groundLayer' es la capa del suelo y que has añadido colisión entre el arma y la capa del suelo
+        this.physics.world.removeCollider(weapon.body.collider);
+        player.weapon = weapon;
 
-    // Añade la arma al inventario del jugador
-    // player.inventory.add(gunContainer);
+        // Añade la arma al inventario del jugador
+        // player.inventory.add(gunContainer);
 
-    // Elimina la arma del mundo del juego
-    gunContainer.destroy();
-    weapons.push(weapon);
+        // Elimina la arma del mundo del juego
+        gunContainer.destroy();
+        weapons.push(weapon);
+    }
 }
 
 // Esta función se llama cuando una bala golpea a un enemigo
-function hitEnemy(bullet, enemy) {
+function hitEnemy(enemy, bullet) {
     // Aquí puedes poner el código para manejar lo que sucede cuando una bala golpea a un enemigo.
     // Por ejemplo, podrías destruir tanto la bala como el enemigo:
     // Rotar al enemigo 90 grados. Esto asume que la orientación original del enemigo es hacia arriba.
@@ -368,6 +434,41 @@ function hitEnemy(bullet, enemy) {
     enemy.angle = 90;
     enemy.setSize(15, 8);
     enemy.y -= 10; // Máxima velocidad horizontal
+
+    let player = playersPhaser.find(
+        (x) => x.socketPlayer.id == enemy.socketPlayer.id
+    );
+    player.isDead = true;
+    // Desactivar la física del sprite.
+    player.body.enable = false;
+
+    // creamos el fantasma
+    let ghost = this.physics.add.sprite(player.x, player.y - 40, 'ghost');
+    ghost.alpha = 0.5;
+    ghost.setSize(8, 15);
+    ghost.setScale(1.5);
+    ghost.setOffset(3, 9);
+    // ghost.body.gravity.y = 500;
+    ghost.body.maxVelocity.x = 100; // Máxima velocidad horizontal
+    ghost.body.drag.x = 1000; // Aceleración o "resistencia" horizontal
+    ghost.isGhost = true;
+    playersPhaser.push(ghost);
+    // Crea el texto del nombre del jugador
+    let playerNameText = this.add.bitmapText(
+        0,
+        0,
+        'atari',
+        enemy.socketPlayer.name + ' X( ',
+        6
+    );
+    ghost.text = playerNameText;
+    ghost.socketPlayer = enemy.socketPlayer;
+    // Desactiva las colisiones.
+    ghost.body.checkCollision.none = true;
+    ghost.anims.play('idle-ghost');
+    // Desactivar la física del sprite.
+    // ghost.body.enable = false;
+    // players = players.filter((x) => x.id != enemy.socketPlayer.id);
 
     let bulletX =
         bullet.player && bullet.player.weapon && bullet.player.weapon.flipX
@@ -381,10 +482,9 @@ function hitEnemy(bullet, enemy) {
     setTimeout(() => {
         explosion.destroy();
     }, 50);
-    // bullet.destroy();
-    bullet.visible = false;
-    bullet.active = false;
-    // bullet.destroy();
+
+    delete bullet.player;
+    bullet.destroy();
 }
 
 function fireBullet(player) {
@@ -413,80 +513,143 @@ function updateGame() {
     var midY = 0;
 
     playersPhaser.forEach((player) => {
-        midX += player.x;
-        midY += player.y;
+        if (!player.isGhost) {
+            midX += player.x;
+            midY += player.y;
+        }
         this.physics.world.wrap(player, 5);
 
+        if (player.isDead) {
+            player.anims.stop();
+        }
+
         let controlPlayer = players.find((p) => p.id == player.socketPlayer.id);
+        if (controlPlayer && !player.isDead) {
+            let cursors = controlPlayer.controls;
 
-        let cursors = controlPlayer.controls;
+            // Controla el movimiento del jugador
+            if (cursors.left) {
+                player.setOffset(5, 9);
 
-        // Controla el movimiento del jugador
-        if (cursors.left) {
-            player.setOffset(5, 9);
+                player.setVelocityX(-160);
+                player.setFlipX(true); // Mira hacia la izquierda
 
-            player.setVelocityX(-160);
-            player.setFlipX(true); // Mira hacia la izquierda
+                if (player.body.onFloor()) {
+                    // solo reproduce la animación 'run' si el jugador está en el suelo
 
-            if (player.body.onFloor()) {
-                // solo reproduce la animación 'run' si el jugador está en el suelo
-                player.anims.play(
-                    'run' + player.socketPlayer.selectedPlayerIndex,
-                    true
-                );
+                    if (player.isGhost) {
+                        player.anims.play('run-ghost', true);
+                    } else {
+                        player.anims.play(
+                            'run' + player.socketPlayer.selectedPlayerIndex,
+                            true
+                        );
+                    }
+                }
+            } else if (cursors.right) {
+                player.setOffset(3, 9);
+
+                player.setVelocityX(160);
+                player.setFlipX(false); // Mira hacia la derecha
+
+                if (player.body.onFloor()) {
+                    // solo reproduce la animación 'run' si el jugador está en el suelo
+
+                    if (player.isGhost) {
+                        player.anims.play('run-ghost', true);
+                    } else {
+                        player.anims.play(
+                            'run' + player.socketPlayer.selectedPlayerIndex,
+                            true
+                        );
+                    }
+                }
+            } else if (cursors.up && player.isGhost) {
+                player.setOffset(5, 9);
+
+                player.setVelocityY(-160);
+                player.setFlipX(true); // Mira hacia la izquierda
+
+                if (player.body.onFloor()) {
+                    // solo reproduce la animación 'run' si el jugador está en el suelo
+
+                    if (player.isGhost) {
+                        player.anims.play('run-ghost', true);
+                    } else {
+                        player.anims.play(
+                            'run' + player.socketPlayer.selectedPlayerIndex,
+                            true
+                        );
+                    }
+                }
+            } else if (cursors.down && player.isGhost) {
+                player.setOffset(3, 9);
+
+                player.setVelocityY(160);
+                player.setFlipX(false); // Mira hacia la derecha
+
+                if (player.body.onFloor()) {
+                    // solo reproduce la animación 'run' si el jugador está en el suelo
+
+                    if (player.isGhost) {
+                        player.anims.play('run-ghost', true);
+                    } else {
+                        player.anims.play(
+                            'run' + player.socketPlayer.selectedPlayerIndex,
+                            true
+                        );
+                    }
+                }
+            } else {
+                player.setVelocityX(0);
+                if (player.body.onFloor()) {
+                    // solo reproduce la animación 'idle' si el jugador está en el suelo
+                    if (player.isGhost) {
+                        player.anims.play('idle-ghost', true);
+                    } else {
+                        player.anims.play(
+                            'idle' + player.socketPlayer.selectedPlayerIndex,
+                            true
+                        );
+                    }
+                }
             }
-        } else if (cursors.right) {
-            player.setOffset(3, 9);
 
-            player.setVelocityX(160);
-            player.setFlipX(false); // Mira hacia la derecha
+            if (cursors.a && player.body.onFloor()) {
+                player.setVelocityY(-250); // Ajusta este valor según lo alto que quieras que el jugador salte
 
-            if (player.body.onFloor()) {
-                // solo reproduce la animación 'run' si el jugador está en el suelo
-                player.anims.play(
-                    'run' + player.socketPlayer.selectedPlayerIndex,
-                    true
-                );
+                // reproduce la animación 'jump' cuando el jugador está saltando
+                if (player.isGhost) {
+                    player.anims.play('jump-ghost', true);
+                } else {
+                    player.anims.play(
+                        'jump' + player.socketPlayer.selectedPlayerIndex,
+                        true
+                    );
+                }
             }
-        } else {
-            player.setVelocityX(0);
-            if (player.body.onFloor()) {
-                // solo reproduce la animación 'idle' si el jugador está en el suelo
-                player.anims.play(
-                    'idle' + player.socketPlayer.selectedPlayerIndex,
-                    true
-                );
+
+            // Actualiza la posición del texto del nombre del jugador para que esté encima del personaje
+            player.text.x = player.x - 10;
+            player.text.y = player.y - 25; // Ajusta este valor según sea necesario
+
+            // Si el jugador tiene un arma, actualizar la posición del arma para que coincida con la del jugador
+            if (player.weapon) {
+                if (player.flipX) {
+                    player.weapon.x = player.x - 10;
+                    player.weapon.setFlipX(true);
+                }
+                // Si el jugador no está volteado, pon el arma a la derecha
+                else {
+                    player.weapon.x = player.x + 10;
+                    player.weapon.setFlipX(false);
+                }
+                player.weapon.y = player.y + 10;
             }
-        }
 
-        if (cursors.a && player.body.onFloor()) {
-            player.setVelocityY(-250); // Ajusta este valor según lo alto que quieras que el jugador salte
-            player.anims.play(
-                'jump' + player.socketPlayer.selectedPlayerIndex,
-                true
-            ); // reproduce la animación 'jump' cuando el jugador está saltando
-        }
-
-        // Actualiza la posición del texto del nombre del jugador para que esté encima del personaje
-        player.text.x = player.x - 10;
-        player.text.y = player.y - 25; // Ajusta este valor según sea necesario
-
-        // Si el jugador tiene un arma, actualizar la posición del arma para que coincida con la del jugador
-        if (player.weapon) {
-            if (player.flipX) {
-                player.weapon.x = player.x - 10;
-                player.weapon.setFlipX(true);
+            if (cursors.b && player.weapon) {
+                fireBullet(player);
             }
-            // Si el jugador no está volteado, pon el arma a la derecha
-            else {
-                player.weapon.x = player.x + 10;
-                player.weapon.setFlipX(false);
-            }
-            player.weapon.y = player.y + 10;
-        }
-
-        if (cursors.b && player.weapon) {
-            fireBullet(player);
         }
     });
 
@@ -504,8 +667,8 @@ function updateGame() {
     //     }
     // });
 
-    midX /= playersPhaser.length;
-    midY /= playersPhaser.length;
+    midX /= playersPhaser.filter((p) => !p.isGhost).length;
+    midY /= playersPhaser.filter((p) => !p.isGhost).length;
 
     // Haz que la cámara siga el punto medio
     this.cameras.main.startFollow({ x: midX, y: midY });
@@ -524,8 +687,8 @@ jQuery(document).ready(function ($) {
     // }
 
     // Titan.view("ui", "waiting_room");
-    // Titan.view("ui", "home");
     Titan.view('ui', 'home');
+    // Titan.view('ui', 'select_player');
     // Titan.view("ui", "gamepad");
     // document.oncontextmenu = function() {return false;};
 });

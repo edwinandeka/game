@@ -1,3 +1,7 @@
+.title {
+    color: #fff;
+    text-align: center;
+}
 
 
 input {
@@ -39,3 +43,25 @@ button {
     font-size: 18px;
     font-weight: bold;
 }
+
+@media (max-width: 712px) {
+    #joinForm {
+        margin: 10px auto;
+        padding: 8px;
+    }
+    #joinForm h1 {
+        display: none;
+    }
+}
+
+@media (orientation: portrait) {
+    body {
+      background-color: pink;
+    }
+  }
+  
+  @media (orientation: landscape) {
+    body {
+      background-color: lightblue;
+    }
+  }

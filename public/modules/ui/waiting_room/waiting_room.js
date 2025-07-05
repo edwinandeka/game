@@ -16,21 +16,55 @@ Titan.modules.create({
 
         this.roomCode.text(roomCode);
 
+        selectedPlayerIndex = 0;
+
+        let players = [
+            'player0',
+            'player1',
+            'player2',
+            'player3',
+            'player4',
+            'player5',
+            'player6',
+            'player7',
+            'player8',
+            'player9',
+            'player10',
+            'player11',
+            'player12',
+        ];
+
+        let playersNames = [
+            'Blast',
+            'Blaze',
+            'Spark',
+            'Frost',
+            'Golem',
+            'Venom',
+            'Claw',
+            'Vortex',
+            'Specter',
+            'Laser',
+            'Acid',
+            'Rock',
+            'Shoot',
+        ];
+
         socket.emit('playerList', roomCode);
         socket.on('playerList', (players) => {
-            console.log('playerList', players);
-
-            window.players = players;
             console.log(players);
-            playerList.innerHTML = '';
+            this.playerListContainer.empty();
+
             players.forEach((player) => {
-                const listItem = document.createElement('li');
-                listItem.textContent = player.name;
-                playerList.appendChild(listItem);
+                this.playerListContainer.append(`
+                <li>
+                    <div class="player-image" style="background-image: url(assets/player${player.selectedPlayerIndex}.png);" ></div> ${player.name} - <span>${playersNames[player.selectedPlayerIndex]}</span>
+                </li>
+            `);
             });
         });
 
-        socket.on('startGame', (players) => {
+        socket.once('startGame', (players) => {
             socket.off('playerList');
 
             Titan.view('ui', 'game');

@@ -16,17 +16,6 @@ Titan.modules.create({
 
         this.roomCode.text(roomCode);
 
-        socket.emit('playerList', roomCode);
-        socket.on('playerList', (players) => {
-            console.log(players);
-            playerList.innerHTML = '';
-            players.forEach((player) => {
-                const listItem = document.createElement('li');
-                listItem.textContent = player.name;
-                playerList.appendChild(listItem);
-            });
-        });
-
         selectedPlayerIndex = 0;
 
         let players = [
@@ -125,13 +114,29 @@ Titan.modules.create({
 
         setTimeout(() => {
             let game = new Phaser.Game(configPlayer);
-            
-        }, 100);
+
+            socket.once('startGame', (players) => {
+                game.destroy(true);
+                socket.off('playerList');
+
+                Titan.view('ui', 'gamepad');
+            });
+        }, 400);
 
         socket.emit('selectPlayer', selectedPlayerIndex, roomCode);
 
-        socket.on('startGame', (players) => {
-            Titan.view('ui', 'gamepad');
+        socket.emit('playerList', roomCode);
+        socket.on('playerList', (players) => {
+            console.log(players);
+            this.playerListContainer.empty();
+
+            players.forEach((player) => {
+                this.playerListContainer.append(`
+                <li>
+                    <div class="player-image" style="background-image: url(assets/player${player.selectedPlayerIndex}.png);" ></div> ${player.name} - <span>${playersNames[player.selectedPlayerIndex]}</span>
+                </li>
+            `);
+            });
         });
     },
 
@@ -181,6 +186,9 @@ Titan.modules.create({
         let roomCode = localStorage.getItem('roomCode');
         socket.off('playerList');
         socket.emit('startGame', roomCode);
+
+        this.waitingRoom.addClass('selected')
+        this.selectButton.hide()
     },
 
     /**

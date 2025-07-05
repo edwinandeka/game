@@ -3,10 +3,14 @@
     color: #fff;
 }
 
+h2 {
+    font-size: 12px;
+}
+
 #waitingRoom {
     text-align: center;
     margin: 10px auto;
-    width: 300px;
+    width: 280px;
     box-shadow: 2px 4px 20px #ccc;
     padding: 30px;
     color: #fff;
@@ -30,9 +34,40 @@ h1#roomCode {
     font-family: monospace;
 }
 
+
 button {
     background: #ccc;
     padding: 16px;
     font-size: 18px;
     font-weight: bold;
+}
+
+#playerListContainer {
+    list-style: none;
+    padding: 0;
+    width: 280px;
+    margin: 0 auto;
+}
+
+#playerListContainer li {
+    display: flex;
+    align-items: center;
+    grid-gap: 12px;
+    justify-content: space-between;
+}
+
+.player-image {
+    width: 60px;
+    height: 48px;
+    overflow: hidden;
+    background-size: 247px;
+    image-rendering: pixelated;
+    border: 1px solid #ccc;
+    background-position-y: -28px;
+}
+
+
+@media (max-width: 712px) {
+    #waitingRoom {
+    }
 }

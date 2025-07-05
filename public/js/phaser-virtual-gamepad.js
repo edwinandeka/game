@@ -293,6 +293,9 @@ window.PhaserVirtualGamepad;
             ) {
                 let roomCode = localStorage.getItem('roomCode');
                 socket.emit('controls', controls, roomCode);
+                if(controls.menu){
+                    socket.emit('menu', roomCode);
+                }
 
                 this.lastControls = JSON.stringify(controls);
             }

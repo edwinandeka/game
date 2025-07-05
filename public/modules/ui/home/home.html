@@ -1,17 +1,14 @@
-<div id="joinForm">
-    <h1>
+<div class="title">
+    <h2>
         Smash <br />
         Blasters
-    </h1>
-    <input type="text" var="playerNameInput" placeholder="tu nombre" value="saksdf" />
-    <input
-        type="text"
-        var="roomCodeInput"
-        placeholder="Código de la sala"
-    />
-    <button on-click="joinRoom">Unirse a la Sala</button>
+    </h2>
+</div>
 
-    <p>ó</p>
-    <button on-click="createRoom">Crear Sala</button>
+<div id="joinForm">
+    <input type="text" var="playerNameInput" placeholder="tu nombre" />
+    <input type="text" var="roomCodeInput" placeholder="Código de la sala" />
+    <button var="joinBtn"  on-click="joinRoom">Unirse a la Sala</button>
 
+    <button var="createBtn" on-click="createRoom">Crear Sala</button>
 </div>
