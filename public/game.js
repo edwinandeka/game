@@ -5,6 +5,8 @@ socket.on('disconnect', () => {
     location.reload(); // Recargar la página
 });
 
+
+
 const WEAPON_TYPES = {
     pistol: {
         key: 'pistol',
@@ -12,7 +14,8 @@ const WEAPON_TYPES = {
         bulletSpeed: 400,
         bulletSprite: 'bullet-pistol',
         weaponSprite: 'weapon-pistol',
-        maxAmmo: 10
+        maxAmmo: 10,
+        damage: 10,
     },
     shotgun: {
         key: 'shotgun',
@@ -20,7 +23,8 @@ const WEAPON_TYPES = {
         bulletSpeed: 300,
         bulletSprite: 'bullet-shotgun',
         weaponSprite: 'weapon-shotgun',
-        maxAmmo: 8
+        maxAmmo: 8,
+        damage: 15,
     },
     sniper: {
         key: 'sniper',
@@ -28,8 +32,9 @@ const WEAPON_TYPES = {
         bulletSpeed: 600,
         bulletSprite: 'bullet-sniper',
         weaponSprite: 'weapon-sniper',
-        maxAmmo: 3
-    }
+        maxAmmo: 3,
+        damage: 40, // Mayor daño por disparo
+    },
 };
 
 class WeaponBase extends Phaser.Physics.Arcade.Sprite {
@@ -56,6 +61,10 @@ class WeaponBase extends Phaser.Physics.Arcade.Sprite {
     fire(player, time) {
         // Se implementa en subclases
     }
+
+    dropWeapon(player) {
+        dropWeapon(player, this.scene);
+    }
 }
 class Pistol extends WeaponBase {
     constructor(scene, x, y) {
@@ -63,6 +72,7 @@ class Pistol extends WeaponBase {
         this.cooldown = WEAPON_TYPES.pistol.fireRate;
         this.type = 'pistol';
         this.data = {
+            ...WEAPON_TYPES.pistol,
             type: this.type,
             ammo: WEAPON_TYPES.pistol.maxAmmo,
             maxAmmo: WEAPON_TYPES.pistol.maxAmmo,
@@ -70,6 +80,8 @@ class Pistol extends WeaponBase {
     }
 
     fire(player, time) {
+        if (this.data.ammo === 0) dropWeapon(player, this.scene);
+
         if (!this.canFire(time)) return;
         if (this.data.ammo <= 0) return;
         this.updateLastFired(time);
@@ -84,6 +96,7 @@ class Shotgun extends WeaponBase {
         this.cooldown = WEAPON_TYPES.shotgun.fireRate;
         this.type = 'shotgun';
         this.data = {
+            ...WEAPON_TYPES.shotgun,
             type: this.type,
             ammo: WEAPON_TYPES.shotgun.maxAmmo,
             maxAmmo: WEAPON_TYPES.shotgun.maxAmmo,
@@ -91,6 +104,7 @@ class Shotgun extends WeaponBase {
     }
 
     fire(player, time) {
+        if (this.data.ammo === 0) dropWeapon(player, this.scene);
         if (!this.canFire(time)) return;
         if (this.data.ammo <= 0) return;
         this.updateLastFired(time);
@@ -107,6 +121,7 @@ class RocketLauncher extends WeaponBase {
         this.cooldown = WEAPON_TYPES.sniper.fireRate;
         this.type = 'sniper';
         this.data = {
+            ...WEAPON_TYPES.sniper,
             type: this.type,
             ammo: WEAPON_TYPES.sniper.maxAmmo,
             maxAmmo: WEAPON_TYPES.sniper.maxAmmo,
@@ -114,15 +129,56 @@ class RocketLauncher extends WeaponBase {
     }
 
     fire(player, time) {
+        if (this.data.ammo === 0) dropWeapon(player, this.scene);
         if (!this.canFire(time)) return;
         if (this.data.ammo <= 0) return;
         this.updateLastFired(time);
         this.data.ammo--;
         fireBullet(player, WEAPON_TYPES.sniper.bulletSpeed, 'rocket-bullet');
     }
+
+
 }
 
+function dropWeapon(player, scene) {
+    if (!player.weapon) return;
 
+    const weapon = player.weapon;
+    weapon.x = player.flipX ? player.x - 50 : player.x + 50;
+    weapon.y = player.y;
+    weapon.body.enable = true;
+    weapon.body.gravity.y = 500;
+    weapon.body.velocity.y = -100;
+    weapon.body.velocity.x = player.flipX ? -25 : 25;
+
+    scene.physics.add.collider(weapon, layer2);
+    weapons.push(weapon);
+
+    delete player.weapon;
+}
+
+function registerDroppedWeapon(scene, weapon) {
+    // Añadir físicas si no existen aún
+    if (!weapon.body) {
+        scene.physics.add.existing(weapon);
+    }
+
+    weapon.body.setAllowGravity(true);
+    weapon.body.setBounce(0.2);
+    weapon.body.setCollideWorldBounds(true);
+
+    // Colisión con el mapa
+    scene.physics.add.collider(weapon, layer2);
+
+    // Overlap para que los jugadores puedan recogerla
+    scene.physics.add.overlap(
+        playersPhaser.filter((p) => !p.isGhost),
+        weapon,
+        handlePlayerDroppedGunCollision,
+        null,
+        scene
+    );
+}
 
 
 window.players;
@@ -400,6 +456,14 @@ function createGame() {
         hudText.setTint(0xffff00); // color amarillo, opcional
         player.hudText = hudText;
 
+        player.health = 100; // salud inicial
+
+        // 👉  barra de vida
+        let healthBarBg = this.add.rectangle(0, 0, 30, 4, 0x000000);
+        let healthBar = this.add.rectangle(0, 0, 30, 4, 0xff0000);
+        player.healthBar = healthBar;
+        player.healthBarBg = healthBarBg;
+
         player.lastFired = 0;
         player.fireRate = 300; // milisegundos entre disparos
     });
@@ -484,120 +548,181 @@ function leftGun() {
 }
 
 function handlePlayerGunCollision(player, gunContainer) {
-    if (!player.isGhost) {
-        // Selecciona un arma aleatoria
-        const weaponKeys = Object.keys(WEAPON_TYPES);
-        const randomKey = weaponKeys[Math.floor(Math.random() * weaponKeys.length)];
-        const selectedWeapon = WEAPON_TYPES[randomKey];
+    if (player.isGhost) return;
 
-        let weaponInstance;
-        switch (randomKey) {
+    // DROPEAR EL ARMA ANTERIOR
+    if (player.weapon) {
+        const oldWeapon = player.weapon;
+        oldWeapon.droppedByPlayerId = player.socketPlayer.id;
+        oldWeapon.dropWeapon(player);
+        setTimeout(() => {
+            registerDroppedWeapon(this, oldWeapon);
+        }, 1000);
+    }
+
+    // CREACIÓN DE ARMA NUEVA ALEATORIA
+
+    const weaponKeys = Object.keys(WEAPON_TYPES);
+    const randomKey = weaponKeys[Math.floor(Math.random() * weaponKeys.length)];
+
+    let weaponInstance;
+    switch (randomKey) {
+        case 'pistol':
+            weaponInstance = new Pistol(this, player.x, player.y);
+            break;
+        case 'shotgun':
+            weaponInstance = new Shotgun(this, player.x, player.y);
+            break;
+        case 'sniper':
+            weaponInstance = new RocketLauncher(this, player.x, player.y);
+            break;
+    }
+
+    weaponInstance.setSize(24, 16);
+    weaponInstance.setScale(0.4);
+    weaponInstance.body.gravity.y = 500;
+
+    this.physics.add.collider(weaponInstance, layer2);
+    weaponInstance.body.enable = false;
+    this.physics.world.removeCollider(weaponInstance.body.collider);
+
+    // Asignar al jugador
+    player.weapon = weaponInstance;
+    player.lastFired = 0;
+
+    weapons.push(weaponInstance);
+    gunContainer.destroy();
+}
+
+function handlePlayerDroppedGunCollision(player, weapon) {
+    if (player.isGhost) return;
+
+    // --- MANEJO DE ARMAS EXISTENTES (DROPEADAS POR OTRO JUGADOR) ---
+    const weaponSprite = weapon;
+    const droppedBy = weapon.droppedByPlayerId;
+
+
+    const isForeignWeapon = droppedBy && droppedBy !== player.socketPlayer.id;
+
+    // Si fue dejada por otro jugador, recarga con límites según tipo
+    if (isForeignWeapon) {
+        switch (weapon.type) {
             case 'pistol':
-                weaponInstance = new Pistol(this, player.x, player.y);
+                weapon.ammo = Math.min(weapon.ammo, 3);
                 break;
             case 'shotgun':
-                weaponInstance = new Shotgun(this, player.x, player.y);
+                weapon.ammo = Math.min(weapon.ammo, 2);
                 break;
             case 'sniper':
-                weaponInstance = new RocketLauncher(this, player.x, player.y);
+                weapon.ammo = Math.min(weapon.ammo, 1);
                 break;
         }
-
-        // Asigna el arma al jugador
-        player.weapon = weaponInstance;
-
-
-        weaponInstance.setSize(24, 16);
-        weaponInstance.setScale(0.4);
-        weaponInstance.body.gravity.y = 500;
-
-        // Almacena datos del arma en el jugador
-        player.weapon = weaponInstance;
-        player.weaponData = selectedWeapon;
-        player.lastFired = 0;
-        player.ammo = selectedWeapon.ammo;
-
-        this.physics.add.collider(weaponInstance, layer2);
-        weaponInstance.body.enable = false;
-        this.physics.world.removeCollider(weaponInstance.body.collider);
-
-        gunContainer.destroy();
-        weapons.push(weaponInstance);
     }
+
+    // DROPEAR EL ARMA ANTERIOR
+    if (player.weapon) {
+        const oldWeapon = player.weapon;
+        oldWeapon.droppedByPlayerId = player.socketPlayer.id;
+        oldWeapon.dropWeapon(player);
+        setTimeout(() => {
+            registerDroppedWeapon(this, oldWeapon);
+        }, 1000);
+    }
+
+    weapon.setSize(24, 16);
+    weapon.setScale(0.4);
+    weapon.body.gravity.y = 500;
+
+    this.physics.add.collider(weapon, layer2);
+    weapon.body.enable = false;
+    this.physics.world.removeCollider(weapon.body.collider);
+
+    // Asignar al jugador
+    player.weapon = weapon;
+    player.lastFired = 0;
+
+    weapons.push(weapon);
+
 }
 
 // Esta función se llama cuando una bala golpea a un enemigo
 function hitEnemy(enemy, bullet) {
-    // Aquí puedes poner el código para manejar lo que sucede cuando una bala golpea a un enemigo.
-    // Por ejemplo, podrías destruir tanto la bala como el enemigo:
-    // Rotar al enemigo 90 grados. Esto asume que la orientación original del enemigo es hacia arriba.
-    // Si tu sprite está orientado de manera diferente, es posible que necesites ajustar el ángulo.
-    enemy.angle = 90;
-    enemy.setSize(15, 8);
-    enemy.y -= 10; // Máxima velocidad horizontal
+    // Obtener jugador Phaser desde socket ID
+    const player = playersPhaser.find(p => p.socketPlayer.id === enemy.socketPlayer.id);
 
-    let player = playersPhaser.find(
-        (x) => x.socketPlayer.id == enemy.socketPlayer.id
-    );
-    player.isDead = true;
-    // Desactivar la física del sprite.
-    player.body.enable = false;
+    if (!player || player.isDead) return;
 
-    // creamos el fantasma
-    let ghost = this.physics.add.sprite(player.x, player.y - 40, 'ghost');
-    ghost.alpha = 0.5;
-    ghost.setSize(8, 15);
-    ghost.setScale(1.5);
-    ghost.setOffset(3, 9);
-    // ghost.body.gravity.y = 500;
-    ghost.body.maxVelocity.x = 100; // Máxima velocidad horizontal
-    ghost.body.drag.x = 1000; // Aceleración o "resistencia" horizontal
-    ghost.isGhost = true;
-    playersPhaser.push(ghost);
-    // Crea el texto del nombre del jugador
-    let playerNameText = this.add.bitmapText(
-        0,
-        0,
-        'atari',
-        enemy.socketPlayer.name + ' X( ',
-        6
-    );
-    ghost.text = playerNameText;
-    ghost.socketPlayer = enemy.socketPlayer;
-    // Desactiva las colisiones.
-    ghost.body.checkCollision.none = true;
-    ghost.anims.play('idle-ghost');
-    // Desactivar la física del sprite.
-    // ghost.body.enable = false;
-    // players = players.filter((x) => x.id != enemy.socketPlayer.id);
+    // Aplicar daño según el arma
+    const damage = bullet.damage || 10;
+    player.health -= damage;
 
-    let bulletX =
-        bullet.player && bullet.player.weapon && bullet.player.weapon.flipX
-            ? bullet.x - 7
-            : bullet.x + 7;
+    // Reducir barra de vida
+    if (player.healthBar) {
+        player.healthBar.width = Math.max((player.health / 100) * 30, 0);
+    }
 
-    let explosion = this.add.image(bulletX, bullet.y, 'bullet-pop');
+    // Verificar si el jugador muere
+    if (player.health <= 0) {
+        player.isDead = true;
+        player.angle = 90;
+        player.setSize(15, 8);
+        player.y -= 10;
+        player.body.enable = false;
+
+        // Crear fantasma
+        const ghost = this.physics.add.sprite(player.x, player.y - 40, 'ghost');
+        ghost.alpha = 0.5;
+        ghost.setSize(8, 15);
+        ghost.setScale(1.5);
+        ghost.setOffset(3, 9);
+        ghost.body.maxVelocity.x = 100;
+        ghost.body.drag.x = 1000;
+        ghost.isGhost = true;
+        ghost.socketPlayer = player.socketPlayer;
+        ghost.anims.play('idle-ghost');
+
+        // Añadir nombre con carita triste
+        const playerNameText = this.add.bitmapText(
+            0,
+            0,
+            'atari',
+            player.socketPlayer.name + ' X(',
+            6
+        );
+        ghost.text = playerNameText;
+
+        // Desactivar colisiones del fantasma
+        ghost.body.checkCollision.none = true;
+
+        playersPhaser.push(ghost);
+
+        // Opcional: quitar del array original si no quieres que siga en jugadores activos
+        // playersPhaser = playersPhaser.filter(p => p !== player);
+    }
+
+    // Crear efecto de explosión
+    const bulletX = (bullet.player?.weapon?.flipX) ? bullet.x - 7 : bullet.x + 7;
+    const explosion = this.add.image(bulletX, bullet.y, 'bullet-pop');
     explosion.setScale(0.2);
     explosion.setSize(8, 8);
 
-    setTimeout(() => {
-        explosion.destroy();
-    }, 50);
+    setTimeout(() => explosion.destroy(), 50);
 
     delete bullet.player;
     bullet.destroy();
 }
 
+
 function fireBullet(player, speed, spriteKey = 'bullet', angleOffset = 0) {
+    // Verifica si el jugador tiene un arma y si tiene munición
     const now = Date.now();
-    const weaponData = player.weaponData;
-    if (!weaponData || player.ammo <= 0) return;
+    const weaponData = player.weapon.data;
+    if (!weaponData || weaponData.ammo <= 0) return;
 
     if (now - (player.lastFired || 0) < weaponData.fireRate) return;
 
     player.lastFired = now;
     player.ammo--;
-
     const bulletX = player.flipX ? player.weapon.x - 14 : player.weapon.x + 14;
     const bullet = bullets.create(bulletX, player.weapon.y - 3, weaponData.bulletSprite);
 
@@ -605,6 +730,7 @@ function fireBullet(player, speed, spriteKey = 'bullet', angleOffset = 0) {
     bullet.setSize(32, 10);
     bullet.body.gravity.y = 0;
     bullet.player = player;
+    bullet.damage = weaponData.damage;
 
     const velocity = player.flipX ? -speed : speed;
     bullet.setVelocityX(velocity);
@@ -635,7 +761,7 @@ function updateGame() {
 
         const cursors = controlPlayer.controls;
 
-        debugger
+
 
         // --- Movimiento horizontal ---
         let targetVelocityX = 0;
@@ -710,7 +836,7 @@ function updateGame() {
 
             player.weapon
 
-            debugger
+
 
             if (player.weapon?.data) {
                 const { type, ammo, maxAmmo } = player.weapon.data;
@@ -719,6 +845,20 @@ function updateGame() {
                 player.hudText.setText('');
             }
         }
+
+        // Posición barra de vida
+        if (player.healthBar && player.healthBarBg) {
+            player.healthBarBg.x = player.x;
+            player.healthBarBg.y = player.y - 35;
+
+            player.healthBar.x = player.x;
+            player.healthBar.y = player.y - 35;
+
+            // Largo proporcional a la vida
+            player.healthBar.width = Math.max((player.health / 100) * 30, 0);
+            player.healthBar.setFillStyle(0xff0000);
+        }
+
     });
 
 
