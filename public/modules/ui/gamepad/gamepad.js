@@ -71,22 +71,22 @@ Titan.modules.create({
             this.gamepad.ready(this);
 
             this.joystick = this.gamepad.addJoystick(
-                100,
-                visibleHeight - (isMobile? 160: 120 ),
+                70,
+                visibleHeight - 250,
                 1.2,
                 'gamepad'
             );
             this.button = this.gamepad.addButton(
-                visibleWidth - 80,
-                visibleHeight - 140,
+                visibleWidth - 50,
+                visibleHeight - 250,
                 1.0,
                 'gamepad',
                 'a'
             );
 
             this.button = this.gamepad.addButton(
-                visibleWidth - 180,
-                visibleHeight - 80,
+                visibleWidth - 170,
+                visibleHeight - 180,
                 1.0,
                 'gamepad',
                 'b'
@@ -155,7 +155,7 @@ Titan.modules.create({
                 default: 'arcade',
             },
             scale: {
-                parent: 'pito',
+                parent: 'gamepad-container',
                 mode: Phaser.Scale.RESIZE,
                 autoCenter: Phaser.Scale.CENTER_BOTH,
                 // zoom: 2, // Ajusta este valor para que se ajuste a tus necesidades
@@ -184,58 +184,58 @@ Titan.modules.create({
 
     },
 
-    /**
-     * @name onPressButton
-     * @description [descripción de la funcion]
-     * @return {void}
-     */
-    onPressButton: function (elem, event) {
-        event.preventDefault();
+    // /**
+    //  * @name onPressButton
+    //  * @description [descripción de la funcion]
+    //  * @return {void}
+    //  */
+    // onPressButton: function (elem, event) {
+    //     event.preventDefault();
 
-        elem = $(elem.target || elem[0]);
+    //     elem = $(elem.target || elem[0]);
 
-        let roomCode = localStorage.getItem('roomCode');
+    //     let roomCode = localStorage.getItem('roomCode');
 
-        let button = elem.data('button');
+    //     let button = elem.data('button');
 
-        socket.emit('controls', button, true, roomCode);
+    //     socket.emit('controls', button, true, roomCode);
 
-        if ('vibrate' in navigator) {
-            // Vibrar durante 1000 ms (1 segundo)
-            navigator.vibrate(10);
-        } else {
-            // El navegador no es compatible con la vibración
-            alert('La vibración no es compatible en este navegador.');
-        }
+    //     if ('vibrate' in navigator) {
+    //         // Vibrar durante 1000 ms (1 segundo)
+    //         navigator.vibrate(10);
+    //     } else {
+    //         // El navegador no es compatible con la vibración
+    //         alert('La vibración no es compatible en este navegador.');
+    //     }
 
-        console.log('button on ', button);
+    //     console.log('button on ', button);
 
-        this.button.text(`${button} ON`);
-    },
+    //     this.button.text(`${button} ON`);
+    // },
 
-    /**
-     * @name onPressButton
-     * @description [descripción de la funcion]
-     * @return {void}
-     */
-    onPressUpButton: function (elem, event) {
-        event.preventDefault();
+    // /**
+    //  * @name onPressButton
+    //  * @description [descripción de la funcion]
+    //  * @return {void}
+    //  */
+    // onPressUpButton: function (elem, event) {
+    //     event.preventDefault();
 
-        elem = $(elem.target || elem[0]);
-        let roomCode = localStorage.getItem('roomCode');
-        let button = elem.data('button');
+    //     elem = $(elem.target || elem[0]);
+    //     let roomCode = localStorage.getItem('roomCode');
+    //     let button = elem.data('button');
 
-        socket.emit('controls', button, false, roomCode);
+    //     socket.emit('controls', button, false, roomCode);
 
-        console.log('button off ', button);
-        this.button.text(`${button} OFF`);
+    //     console.log('button off ', button);
+    //     this.button.text(`${button} OFF`);
 
-        if ('vibrate' in navigator) {
-            // Vibrar durante 1000 ms (1 segundo)
-            navigator.vibrate(10);
-        } else {
-            // El navegador no es compatible con la vibración
-            alert('La vibración no es compatible en este navegador.');
-        }
-    },
+    //     if ('vibrate' in navigator) {
+    //         // Vibrar durante 1000 ms (1 segundo)
+    //         navigator.vibrate(10);
+    //     } else {
+    //         // El navegador no es compatible con la vibración
+    //         alert('La vibración no es compatible en este navegador.');
+    //     }
+    // },
 });

@@ -3,7 +3,7 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "",
+    "activeFile": "level2.tmx",
     "expandedProjectPaths": [
         "."
     ],
@@ -19,15 +19,15 @@
             "scale": 1.9,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 224.4736842105263,
-                "y": 224.73684210526315
+                "x": 173.42105263157896,
+                "y": 224.4736842105263
             }
         },
         "level1.tmx": {
             "scale": 1.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 365.33333333333337,
+                "x": 300.33333333333337,
                 "y": 277.66666666666663
             }
         },
@@ -35,11 +35,11 @@
             "scaleInDock": 2
         },
         "level2.tmx": {
-            "scale": 1.5,
-            "selectedLayer": 2,
+            "scale": 3,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 360.66666666666663,
-                "y": 206.99999999999997
+                "x": 358.16666666666663,
+                "y": 213.16666666666666
             }
         },
         "level2.tmx#tileMap": {
@@ -59,12 +59,14 @@
     "map.tileWidth": 18,
     "map.width": 40,
     "openFiles": [
+        "level2.tmx"
     ],
     "project": "pito.tiled-project",
     "recentFiles": [
-        "level1..tmj",
+        "level2.tmx",
         "level1.tmx",
-        "tilemap_packed.tsx"
+        "tilemap_packed.tsx",
+        "level1..tmj"
     ],
     "tileset.embedInMap": true,
     "tileset.lastUsedFormat": "tsx",

@@ -42,6 +42,8 @@ async function getLocalIP() {
 
 //  generar un ID aleatorio para la sala
 function makeid(length) {
+
+    return "XXXX"
     var result = '';
     var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ';
     // 'ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';

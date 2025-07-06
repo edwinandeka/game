@@ -143,9 +143,9 @@ window.PhaserVirtualGamepad;
             // });
 
             for (let i = 1; i <= 10; i++) {
-                let pointer = this.input['pointer' + i];
+                let pointer = this.input.pointers[i];
                 if (pointer) {
-                    testDistance(pointer, this);
+                    this.testDistance(pointer, this);
                 }
             }
 
@@ -293,7 +293,7 @@ window.PhaserVirtualGamepad;
             ) {
                 let roomCode = localStorage.getItem('roomCode');
                 socket.emit('controls', controls, roomCode);
-                if(controls.menu){
+                if (controls.menu) {
                     socket.emit('menu', roomCode);
                 }
 

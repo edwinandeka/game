@@ -74,3 +74,23 @@
     border-radius: 16px;
     padding: 2px 16px;
 }
+
+.gamepad-container {
+    height: 100vh;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.gamepad {
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.button {
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
