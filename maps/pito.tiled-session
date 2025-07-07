@@ -3,43 +3,73 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "level2.tmx",
+    "activeFile": "C:/xampp/htdocs/game/game/public/assets/level2.json",
     "expandedProjectPaths": [
-        "."
     ],
     "file.lastUsedOpenFilter": "Todos los archivos (*)",
     "fileStates": {
         "": {
-            "scaleInDock": 2
+            "scaleInDock": 1
         },
         "#tileMap": {
             "scaleInDock": 1
         },
+        "C:/xampp/htdocs/game/game/public/assets/level1.json": {
+            "expandedObjectLayers": [
+                6
+            ],
+            "scale": 3.251111111111111,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 360.03075871496924,
+                "y": 225.00000000000003
+            }
+        },
+        "C:/xampp/htdocs/game/game/public/assets/level1.json#tileMap": {
+            "scaleInDock": 1
+        },
+        "C:/xampp/htdocs/game/game/public/assets/level2.json": {
+            "expandedObjectLayers": [
+                6
+            ],
+            "scale": 2,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 367.75,
+                "y": 64.25
+            }
+        },
+        "C:/xampp/htdocs/game/game/public/assets/level2.json#tileMap": {
+            "scaleInDock": 3
+        },
         "level1..tmj": {
-            "scale": 1.9,
+            "scale": 4,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 173.42105263157896,
-                "y": 224.4736842105263
+                "x": 258.125,
+                "y": 151.875
             }
         },
         "level1.tmx": {
             "scale": 1.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 300.33333333333337,
-                "y": 277.66666666666663
+                "x": 745.6666666666666,
+                "y": 541
             }
         },
         "level1.tmx#tileMap": {
             "scaleInDock": 2
         },
         "level2.tmx": {
+            "expandedObjectLayers": [
+                6
+            ],
             "scale": 3,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 358.16666666666663,
-                "y": 213.16666666666666
+                "x": 380.8333333333333,
+                "y": 194.5
             }
         },
         "level2.tmx#tileMap": {
@@ -59,14 +89,20 @@
     "map.tileWidth": 18,
     "map.width": 40,
     "openFiles": [
-        "level2.tmx"
+        "C:/xampp/htdocs/game/game/public/assets/level1.json",
+        "level2.tmx",
+        "level1.tmx",
+        "level1..tmj",
+        "C:/xampp/htdocs/game/game/public/assets/level2.json"
     ],
     "project": "pito.tiled-project",
     "recentFiles": [
+        "C:/xampp/htdocs/game/game/public/assets/level1.json",
         "level2.tmx",
         "level1.tmx",
-        "tilemap_packed.tsx",
-        "level1..tmj"
+        "level1..tmj",
+        "C:/xampp/htdocs/game/game/public/assets/level2.json",
+        "tilemap_packed.tsx"
     ],
     "tileset.embedInMap": true,
     "tileset.lastUsedFormat": "tsx",

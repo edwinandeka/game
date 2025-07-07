@@ -87,6 +87,9 @@ class Pistol extends WeaponBase {
         this.updateLastFired(time);
         this.data.ammo--;
         fireBullet(player, WEAPON_TYPES.pistol.bulletSpeed, 'bullet');
+
+        // 🔊 Efecto de disparo
+        this.scene.sfx[this.type].play({ volume: 0.3 });
     }
 }
 
@@ -105,13 +108,15 @@ class Shotgun extends WeaponBase {
 
     fire(player, time) {
         if (this.data.ammo === 0) dropWeapon(player, this.scene);
+
         if (!this.canFire(time)) return;
         if (this.data.ammo <= 0) return;
         this.updateLastFired(time);
         this.data.ammo--;
-        fireBullet(player, WEAPON_TYPES.shotgun.bulletSpeed, 'bullet', -5);
         fireBullet(player, WEAPON_TYPES.shotgun.bulletSpeed, 'bullet', 0);
-        fireBullet(player, WEAPON_TYPES.shotgun.bulletSpeed, 'bullet', 5);
+
+        // 🔊 Efecto de disparo
+        this.scene.sfx[this.type].play({ volume: 0.3 });
     }
 }
 
@@ -129,12 +134,17 @@ class RocketLauncher extends WeaponBase {
     }
 
     fire(player, time) {
+
         if (this.data.ammo === 0) dropWeapon(player, this.scene);
+
         if (!this.canFire(time)) return;
         if (this.data.ammo <= 0) return;
         this.updateLastFired(time);
         this.data.ammo--;
         fireBullet(player, WEAPON_TYPES.sniper.bulletSpeed, 'rocket-bullet');
+
+        // 🔊 Efecto de disparo
+        this.scene.sfx[this.type].play({ volume: 0.3 });
     }
 
 
@@ -144,6 +154,8 @@ function dropWeapon(player, scene) {
     if (!player.weapon) return;
 
     const weapon = player.weapon;
+    weapon.droppedByPlayerId = player.socketPlayer.id;
+
     weapon.x = player.flipX ? player.x - 50 : player.x + 50;
     weapon.y = player.y;
     weapon.body.enable = true;
@@ -154,7 +166,15 @@ function dropWeapon(player, scene) {
     scene.physics.add.collider(weapon, layer2);
     weapons.push(weapon);
 
+    registerDroppedWeapon(scene, weapon);
+
     delete player.weapon;
+
+    // 🚫 evita que el jugador lo recoja enseguida
+    player.canPickupWeapon = false;
+    setTimeout(() => {
+        player.canPickupWeapon = true;
+    }, 1000);
 }
 
 function registerDroppedWeapon(scene, weapon) {
@@ -162,7 +182,7 @@ function registerDroppedWeapon(scene, weapon) {
     if (!weapon.body) {
         scene.physics.add.existing(weapon);
     }
-
+    debugger
     weapon.body.setAllowGravity(true);
     weapon.body.setBounce(0.2);
     weapon.body.setCollideWorldBounds(true);
@@ -194,7 +214,7 @@ if (
 
 socket.on('gamecontrols', (pls) => {
     players = pls;
-    console.log('gamecontrols', players);
+    // console.log('gamecontrols', players);
 });
 
 const config = {
@@ -301,6 +321,7 @@ function preloadGame() {
     // Carga el archivo del tileset
     // this.load.tilemapTiledJSON('map', 'assets/level1.json');
     let level = Math.round(Math.random()) + 1;
+    level = 2; // Forzar a usar el nivel 2
     this.load.tilemapTiledJSON('map', `assets/level${level}.json`);
 
     this.load.image('tiles', 'assets/tileMap.png');
@@ -324,6 +345,12 @@ function preloadGame() {
 
     this.load.image('bullet-pop', 'assets/tiles/laserBlueBurst.png');
     this.load.image('container', 'assets/tiles/map/tile_0009.png');
+
+    this.load.audio('bg-music', 'assets/audio/music-bg.mp3');
+
+    this.load.audio('shoot-pistol', 'assets/audio/shoot-pistol.wav');
+    this.load.audio('shoot-shotgun', 'assets/audio/shoot-shotgun.wav');
+    this.load.audio('shoot-sniper', 'assets/audio/shoot-sniper.wav');
 
     console.log('preloadGame finished...');
 }
@@ -466,6 +493,8 @@ function createGame() {
 
         player.lastFired = 0;
         player.fireRate = 300; // milisegundos entre disparos
+
+        player.canPickupWeapon = true; // al crear el jugador
     });
 
     gunContainer = map.createFromObjects('contenedores', {
@@ -511,6 +540,18 @@ function createGame() {
         bullet.destroy();
     });
 
+
+    this.bgMusic = this.sound.add('bg-music', {
+        loop: true,
+        volume: 0.3 // Puedes ajustar el volumen entre 0.0 y 1.0
+    });
+    this.bgMusic.play();
+
+    this.sfx = {
+        pistol: this.sound.add('shoot-pistol'),
+        shotgun: this.sound.add('shoot-shotgun'),
+        sniper: this.sound.add('shoot-sniper'),
+    };
 
     console.log('createGame finished...');
 }
@@ -595,26 +636,35 @@ function handlePlayerGunCollision(player, gunContainer) {
 }
 
 function handlePlayerDroppedGunCollision(player, weapon) {
-    if (player.isGhost) return;
+
+    if (player.isGhost || !player.canPickupWeapon) return;
+
+    player.canPickupWeapon = false; // 🚫 bloquea recolección
+    setTimeout(() => {
+        player.canPickupWeapon = true; // ✅ permite luego de 1 segundo
+    }, 1000);
+
 
     // --- MANEJO DE ARMAS EXISTENTES (DROPEADAS POR OTRO JUGADOR) ---
-    const weaponSprite = weapon;
     const droppedBy = weapon.droppedByPlayerId;
 
 
     const isForeignWeapon = droppedBy && droppedBy !== player.socketPlayer.id;
-
+    debugger
     // Si fue dejada por otro jugador, recarga con límites según tipo
     if (isForeignWeapon) {
         switch (weapon.type) {
             case 'pistol':
-                weapon.ammo = Math.min(weapon.ammo, 3);
+                weapon.ammo = 3;
+                weapon.data.ammo = 3;
                 break;
             case 'shotgun':
-                weapon.ammo = Math.min(weapon.ammo, 2);
+                weapon.ammo = 2;
+                weapon.data.ammo = 2;
                 break;
             case 'sniper':
-                weapon.ammo = Math.min(weapon.ammo, 1);
+                weapon.ammo = 2;
+                weapon.data.ammo = 2;
                 break;
         }
     }
@@ -849,10 +899,10 @@ function updateGame() {
         // Posición barra de vida
         if (player.healthBar && player.healthBarBg) {
             player.healthBarBg.x = player.x;
-            player.healthBarBg.y = player.y - 35;
+            player.healthBarBg.y = player.y - 15;
 
             player.healthBar.x = player.x;
-            player.healthBar.y = player.y - 35;
+            player.healthBar.y = player.y - 15;
 
             // Largo proporcional a la vida
             player.healthBar.width = Math.max((player.health / 100) * 30, 0);

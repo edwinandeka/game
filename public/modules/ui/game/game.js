@@ -23,7 +23,9 @@ Titan.modules.create({
             let game = new Phaser.Game(config);
             socket.once('menu', (player) => {
                 console.log('JUEGO DESTRUIDO >> ' + player);
-
+                if (game && game.sound && game.sound.context && game.sound.context.state === 'running') {
+                    game.sound.stopAll(); // detiene todos los sonidos reproducidos
+                }
                 game.destroy(true);
                 let player2;
                 weapon = null;
